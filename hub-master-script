@@ -146,6 +146,27 @@ window.updateRatingDisplay = function(val) {
 // 3. NEWSLETTER ARCHIVE LOGIC
 // ==========================================
 
+window.switchView = function(viewId) {
+    // 1. Universal Hide: Hide all views across the portal
+    document.querySelectorAll('.view-section').forEach(el => el.classList.add('it-hidden'));
+    
+    // 2. Universal Show: Show the one the user clicked
+    const target = document.getElementById(viewId);
+    if(target) target.classList.remove('it-hidden');
+    
+    // 3. Logic Branch: If it's a lesson, load lesson data. If it's the archive, update visibility.
+    if (typeof courseData !== 'undefined' && courseData[viewId]) {
+        window.location.hash = viewId;
+        loadLesson(viewId); // This calls the fixed Hub logic
+    } else if (viewId === 'view-archive') {
+        if(typeof window.updateVisibility === 'function') window.updateVisibility();
+        history.pushState("", document.title, window.location.pathname + window.location.search);
+    } else {
+        window.location.hash = viewId;
+    }
+    window.scrollTo(0,0);
+};
+
 // Variables for Load More
 const BATCH_SIZE = 4; 
 let visibleCount = BATCH_SIZE;
@@ -240,6 +261,25 @@ window.sortNews = function() {
     window.updateVisibility();
 };
 
+// ==========================================
+// 4. Standard Accordion
+// ==========================================
+
+// REPLACEMENT FOR SECTION 4
+window.toggleAccordion = window.toggleFaq = function(header) {
+    header.classList.toggle('active');
+    const content = header.nextElementSibling;
+    if (content) {
+        if (content.style.maxHeight) {
+            content.style.maxHeight = null;
+            content.classList.remove('open');
+        } else {
+            content.classList.add('open');
+            content.style.maxHeight = content.scrollHeight + "px";
+        }
+    }
+};
+
 
 // ==========================================
 // 5. HOMEPAGE SPECIFICS & INITIALIZATION
@@ -308,3 +348,43 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 
 });
+
+// Education Hub
+
+// REPLACEMENT FOR SECTION 6 LOGIC
+let edu_quizHistory = [];
+let edu_currentScore = 0;
+let edu_currentCourseId = null;
+
+function loadLesson(id) {
+    const data = courseData[id];
+    if (!data) return;
+
+    // THE FIX: Explicitly reset score and history every time a lesson loads
+    edu_currentCourseId = id;
+    edu_currentScore = 0;
+    edu_quizHistory = [];
+
+    // UI Mapping
+    document.getElementById('lesson-title').innerText = data.title;
+    document.getElementById('lesson-difficulty').innerHTML = `<i class="fa-solid fa-signal"></i> ${data.difficulty}`;
+    document.getElementById('lesson-duration').innerHTML = `<i class="fa-regular fa-clock"></i> ${data.duration} Min`;
+    
+    const videoEl = document.getElementById('lesson-video');
+    if (videoEl) videoEl.src = data.video;
+
+    const notesGroup = document.getElementById('lesson-notes');
+    if (notesGroup) {
+        notesGroup.innerHTML = data.notes.map(n => `
+            <div class="accordion-item">
+                <div class="accordion-header" onclick="window.toggleAccordion(this)">
+                    ${n.title} <i class="fa-solid fa-chevron-down accordion-icon"></i>
+                </div>
+                <div class="accordion-content"><div class="accordion-body">${n.content}</div></div>
+            </div>`).join('');
+    }
+
+    resetQuizUI(); // Clears the previous quiz HTML
+}
+
+// ... include the rest of the checkAnswer and showResults functions using edu_currentScore ...
