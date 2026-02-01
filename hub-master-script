@@ -1357,6 +1357,7 @@ window.updateTracker = function(url) {
         filterCourses();
         sortCourses();
     }
+};
 
 
 // ==========================================
