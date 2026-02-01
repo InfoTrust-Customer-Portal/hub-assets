@@ -1,11 +1,12 @@
 /**
  * INFOTRUST PORTAL - MASTER SCRIPT
- * Contains logic for:
- * 1. Global Utilities (Accessibility, Share, Accordions)
+ * Verified against original widgets: Homepage, Scorecards, Education, Newsletter.
+ * * Contains logic for:
+ * 1. Global Utilities (Accessibility, Share, Accordions, Safe Setters)
  * 2. API Connectors (Locked Assets, Feedback Forms)
  * 3. Navigation & Routing (SPA Switcher, Hash Polling)
  * 4. Newsletter Archive (Filtering, Sorting)
- * 5. Homepage Widgets (Live Time)
+ * 5. Homepage Widgets (Live Time, Market Tracker, FAQs)
  * 6. Education Hub (Course Rendering, Quizzes, Certification)
  */
 
@@ -40,7 +41,7 @@
         });
     };
 
-    // Global Accordion Toggle (Used in FAQ & Education Notes)
+    // Global Accordion Toggle (Used in Education Hub Notes)
     window.toggleAccordion = function(header) {
         header.classList.toggle('active');
         var content = header.nextElementSibling;
@@ -53,7 +54,11 @@
         }
     };
 
-    // Safe DOM Setters
+    // [CRITICAL FIX] Alias toggleFaq to toggleAccordion
+    // Your Homepage HTML calls 'toggleFaq(this)', so we map it here.
+    window.toggleFaq = window.toggleAccordion;
+
+    // Safe DOM Setters (Prevents errors if element is missing)
     function safeSetText(id, text) { const el = document.getElementById(id); if(el) el.innerText = text; }
     function safeSetHTML(id, html) { const el = document.getElementById(id); if(el) el.innerHTML = html; }
 
@@ -61,7 +66,7 @@
     // 2. API CONNECTORS
     // ===============================================
 
-    // Capture Interest (Locked Content Upsell)
+    // Capture Interest (Locked Content Upsell - Scorecards/Docs)
     window.captureInterest = function(btnElement, deliverableName) {
         const originalText = btnElement.innerHTML;
         btnElement.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending...';
@@ -99,7 +104,7 @@
         });
     };
 
-    // Submit Feedback (Newsletters & Education)
+    // Submit Feedback (Newsletters, Education, Help Page)
     window.updateRatingDisplay = function(val) {
         const el = document.getElementById('ratingValue');
         if(el) el.innerText = val + "/5";
@@ -115,7 +120,8 @@
         const rating = document.getElementById('ratingSlider')?.value || "N/A";
         const notes = document.getElementById('feedbackNotes')?.value || "";
         const timestamp = new Date().toISOString();
-        // Append Course ID if available (Education Hub context)
+        
+        // Context: append course ID if present
         const context = (typeof currentCourseId !== 'undefined' && currentCourseId) ? ` (${currentCourseId})` : "";
         const pageUrl = window.location.href + context;
 
@@ -167,7 +173,7 @@
 
         // 3. Education Hub Logic: Load Course Data
         if (window.courseData && window.courseData[viewId]) {
-            window.loadLesson(viewId); // Call Education Logic
+            window.loadLesson(viewId); 
         }
 
         // 4. Handle Navigation UI State (Pills vs Back Buttons)
@@ -193,7 +199,6 @@
     };
 
     // Global Hash Polling (Fixes React/FuseBase Navigation bugs)
-    // Checks every 500ms if the URL hash doesn't match the visible content
     setInterval(function() {
         if (window.location.hash) {
             var targetId = window.location.hash.substring(1);
@@ -250,6 +255,7 @@
     // 5. HOMEPAGE WIDGETS
     // ===============================================
 
+    // Live Clock (Homepage)
     function updateDateTime() {
         const dateEl = document.getElementById('current-date');
         const timeEl = document.getElementById('current-time');
@@ -260,6 +266,14 @@
         timeEl.textContent = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZoneName: 'short' });
     }
     
+    // [CRITICAL FIX] Market Tracker (Homepage)
+    // Used in the 'Live Market Tracker' section dropdown
+    window.updateTracker = function(url) {
+        const iframe = document.getElementById('tracker-frame');
+        if(iframe) iframe.src = url;
+    };
+
+    // Initialize Clock if element exists
     if(document.getElementById('current-date')) {
         updateDateTime();
         setInterval(updateDateTime, 1000);
@@ -269,14 +283,13 @@
     // 6. EDUCATION HUB LOGIC
     // ===============================================
     
-    // Variables for Quiz State
     let currentCourseId = null;
     let quizHistory = [];
     let currentScore = 0;
 
     // -- Course Rendering --
     window.loadLesson = function(id) {
-        // Data object (window.courseData) must be defined in the HTML widget of the page
+        // CRITICAL: Expects window.courseData to be defined in the Page HTML Widget
         const data = window.courseData ? window.courseData[id] : null;
         if (!data) return; // Exit if not education content
         
