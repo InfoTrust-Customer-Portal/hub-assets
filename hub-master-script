@@ -34,7 +34,10 @@ window.copyToClipboard = function() {
 // This function now safely handles Newsletter views, Lesson views, and generic SPA views.
 window.switchView = function(viewId) {
     const target = document.getElementById(viewId);
-    if (!target) return;
+    if (!target) {
+        setTimeout(() => window.switchView(viewId), 100);
+        return;
+    }
 
     // Hide all view sections
     document.querySelectorAll('.view-section').forEach(el => el.classList.add('it-hidden'));
