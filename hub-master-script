@@ -1,319 +1,214 @@
-/**
- * INFOTRUST PORTAL - CONSOLIDATED MASTER SCRIPT (V2.0)
- * Fixed for Education Hub Navigation & State Persistence.
- */
+// 1. Accessibility
+    window.toggleAccessibility = function() {
+        document.body.classList.toggle('accessibility-mode');
+        const btn = document.querySelector('.util-btn[onclick="toggleAccessibility()"]');
+        if(btn) btn.classList.toggle('active');
+    };
 
-// ==========================================
-// 1. GLOBAL UTILITIES (Accessibility, Share)
-// ==========================================
-
-window.toggleAccessibility = function() {
-    document.body.classList.toggle('accessibility-mode');
-    document.querySelectorAll('.util-btn[onclick*="toggleAccessibility"]').forEach(btn => btn.classList.toggle('active'));
-};
-
-window.copyToClipboard = function() {
-    const dummy = document.createElement('input');
-    document.body.appendChild(dummy);
-    dummy.value = window.location.href;
-    dummy.select();
-    document.execCommand('copy');
-    document.body.removeChild(dummy);
-    
-    document.querySelectorAll('.share-trigger').forEach(btn => {
-        const originalHTML = btn.innerHTML;
+    // 2. Copy Link
+    window.copyToClipboard = function() {
+        const dummy = document.createElement('input');
+        document.body.appendChild(dummy);
+        dummy.value = window.location.href;
+        dummy.select();
+        document.execCommand('copy');
+        document.body.removeChild(dummy);
+        const btn = document.querySelector('.share-trigger');
         btn.innerHTML = 'Copied <i class="fa-solid fa-check"></i>';
-        setTimeout(() => { btn.innerHTML = originalHTML; }, 2000);
-    });
-};
+        setTimeout(() => { btn.innerHTML = 'Share <i class="fa-solid fa-share-from-square"></i>'; }, 2000);
+    };
 
-// ==========================================
-// 2. NAVIGATION & UI (Consolidated Switcher)
-// ==========================================
+    // 3. FAQ Accordion
+    window.toggleFaq = function(header) {
+        header.classList.toggle('active');
+        var content = header.nextElementSibling;
+        if (content.style.maxHeight) { content.style.maxHeight = null; } 
+        else { content.style.maxHeight = content.scrollHeight + "px"; }
+    };
 
-// This function now safely handles Newsletter views, Lesson views, and generic SPA views.
-window.switchView = function(viewId) {
-    const target = document.getElementById(viewId);
-    if (!target) return;
-
-    // Hide all view sections
-    document.querySelectorAll('.view-section').forEach(el => el.classList.add('it-hidden'));
-    target.classList.remove('it-hidden');
-
-    // CONTEXTUAL LOGIC
-    // A. Education Hub: If courseData exists and contains this ID
-    if (typeof courseData !== 'undefined' && courseData[viewId]) {
-        window.location.hash = viewId;
-        loadLesson(viewId); 
-    } 
-    // B. Newsletter Archive: If switching back to the main archive
-    else if (viewId === 'view-archive') {
-        if (typeof window.updateVisibility === 'function') window.updateVisibility();
-        history.pushState("", document.title, window.location.pathname + window.location.search);
+    // 4. Update Time
+    function updateDateTime() {
+        const now = new Date();
+        const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        const timeOptions = { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZoneName: 'short' };
         
-        // Toggle specific Archive Navs
-        const archNav = document.getElementById('archive-nav');
-        const artNav = document.getElementById('article-nav');
-        if(archNav) archNav.classList.remove('it-hidden');
-        if(artNav) artNav.classList.add('it-hidden');
-    } 
-    // C. Generic Fallback (Homepage, Blog, etc.)
-    else {
+        const dateEl = document.getElementById('current-date');
+        const timeEl = document.getElementById('current-time');
+
+        if(dateEl) dateEl.textContent = now.toLocaleDateString('en-US', dateOptions);
+        if(timeEl) timeEl.textContent = now.toLocaleTimeString('en-US', timeOptions);
+    }
+    updateDateTime();
+    setInterval(updateDateTime, 1000);
+
+    // 5. Market Tracker Selector
+    function updateTracker(url) {
+        const iframe = document.getElementById('tracker-frame');
+        if(iframe) iframe.src = url;
+    }
+
+     // 6. Feedback Logic
+    window.updateRatingDisplay = function(val) {
+        document.getElementById('ratingValue').innerText = val + "/5";
+    };
+
+    window.submitFeedback = function(e) {
+        e.preventDefault();
+        
+        const rating = document.getElementById('ratingSlider').value;
+        const notes = document.getElementById('feedbackNotes').value;
+        const pageUrl = window.location.href;
+        const timestamp = new Date().toISOString();
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxeHVZiDONjwbGlzgXSdTWYCNvZ0CiOhkV-9SAh2Jl5wzVxfA4rlb5RwYjSU8TUibzp/exec"; 
+        
+        const data = { timestamp: timestamp, url: pageUrl, rating: rating, feedback: notes };
+
+        const submitBtn = e.target.querySelector('button');
+        const originalText = submitBtn.innerText;
+        submitBtn.innerText = "Sending...";
+        submitBtn.disabled = true;
+
+        if (GOOGLE_SCRIPT_URL) {
+            fetch(GOOGLE_SCRIPT_URL, {
+                method: 'POST',
+                mode: 'no-cors', 
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            })
+            .then(() => {
+                document.getElementById('feedbackForm').style.display = 'none';
+                document.getElementById('feedbackMessage').style.display = 'block';
+            })
+            .catch(err => {
+                console.error('Error:', err);
+                alert("Error sending feedback. Please try again.");
+                submitBtn.innerText = originalText;
+                submitBtn.disabled = false;
+            });
+        }
+    };
+
+    // 7. Hash Copy Logic
+    window.copyToClipboard = function() {
+      const dummy = document.createElement('input');
+      document.body.appendChild(dummy);
+      dummy.value = window.location.href; // Copies current hash
+      dummy.select();
+      document.execCommand('copy');
+      document.body.removeChild(dummy);
+      const btn = document.querySelector('.share-trigger');
+      btn.innerHTML = 'Copied <i class="fa-solid fa-check"></i>';
+      setTimeout(() => {
+        btn.innerHTML = 'Share <i class="fa-solid fa-share-from-square"></i>';
+      }, 2000);
+    };
+
+    // 8. SPA Switcher & Hash Routing
+    window.switchView = function(viewId) {
+      // Hide all views
+      document.querySelectorAll('.view-section').forEach(el => el.classList.add('it-hidden'));
+      document.getElementById(viewId).classList.remove('it-hidden');
+      // Handle Nav Visibility
+      if (viewId === 'view-archive') {
+        // SHOW Pills, HIDE Back Button
+        document.getElementById('archive-nav').classList.remove('it-hidden');
+        document.getElementById('article-nav').classList.add('it-hidden');
+        history.pushState("", document.title, window.location.pathname + window.location.search);
+      } else {
+        // HIDE Pills, SHOW Back Button
+        document.getElementById('archive-nav').classList.add('it-hidden');
+        document.getElementById('article-nav').classList.remove('it-hidden');
         window.location.hash = viewId;
-    }
-
-    window.scrollTo(0, 0);
-};
-
-// Universal Accordion Logic for FAQs and Lesson Notes
-window.toggleAccordion = window.toggleFaq = function(header) {
-    header.classList.toggle('active');
-    const content = header.nextElementSibling;
-    if (content) {
-        if (content.style.maxHeight) {
-            content.style.maxHeight = null;
-            content.classList.remove('open');
-        } else {
-            content.classList.add('open');
-            content.style.maxHeight = content.scrollHeight + "px";
-        }
-    }
-};
-
-// ==========================================
-// 3. API CONNECTORS (Feedback & Interest)
-// ==========================================
-
-window.submitFeedback = function(e) {
-    e.preventDefault();
-    const ratingInput = document.getElementById('ratingSlider');
-    const notesInput = document.getElementById('feedbackNotes');
-    if(!ratingInput) return;
-
-    const data = { 
-        timestamp: new Date().toISOString(), 
-        url: window.location.href + (typeof edu_currentCourseId !== 'undefined' ? ` (${edu_currentCourseId})` : ""), 
-        rating: ratingInput.value, 
-        feedback: notesInput ? notesInput.value : "" 
+      }
+      window.scrollTo(0, 0);
     };
 
-    const FEEDBACK_URL = "https://script.google.com/macros/s/AKfycbxeHVZiDONjwbGlzgXSdTWYCNvZ0CiOhkV-9SAh2Jl5wzVxfA4rlb5RwYjSU8TUibzp/exec";
-    
-    fetch(FEEDBACK_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(data) })
-    .then(() => {
-        document.getElementById('feedbackForm').style.display = 'none';
-        document.getElementById('feedbackMessage').style.display = 'block';
-    });
-};
-
-window.updateRatingDisplay = function(val) {
-    const display = document.getElementById('ratingValue');
-    if(display) display.innerText = val + "/5";
-};
-
-window.captureInterest = function(btnElement, deliverableName) {
-    const originalText = btnElement.innerHTML;
-    btnElement.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending...';
-    btnElement.disabled = true;
-
-    const payload = {
-        email: window.analyticsUserEmail || "unknown@user.com",
-        domain: window.location.hostname,
-        path: window.location.pathname,
-        date: new Date().toISOString(),
-        deliverable: deliverableName
-    };
-
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycb3QwMuUpiPeRKEtV_wi2RvMGWTqffS8qe6M0iI7VbiXUrnn5pPez-QTIbexztbKsbR/exec"; 
-
-    fetch(SCRIPT_URL, {
-        method: "POST",
-        mode: "no-cors", 
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-    })
-    .then(() => {
-        btnElement.classList.add('sent');
-        btnElement.innerHTML = '<i class="fa-solid fa-check"></i> Request Sent';
-    })
-    .catch(error => {
-        console.error("Error logging interest:", error);
-        btnElement.innerHTML = originalText;
-        btnElement.disabled = false;
-        alert("There was a slight issue. Please contact your account manager.");
-    });
-};
-
-// ==========================================
-// 4. NEWSLETTER ARCHIVE (Specific Helpers)
-// ==========================================
-
-const BATCH_SIZE = 4;
-let visibleCount = BATCH_SIZE;
-
-window.updateVisibility = function() {
-    const grid = document.getElementById('news-container');
-    if (!grid) return;
-    const items = Array.from(grid.children);
-    items.forEach((item, index) => {
-        item.style.display = (index < visibleCount) ? 'flex' : 'none';
-    });
-    const btn = document.querySelector('.load-more-container');
-    if(btn) btn.style.display = (items.length > visibleCount) ? 'flex' : 'none';
-};
-
-// ==========================================
-// 5. EDUCATION HUB (State & Quiz Engine)
-// ==========================================
-
-// Namespaced variables to prevent collision with other page states
-let edu_quizHistory = [];
-let edu_currentScore = 0;
-let edu_currentCourseId = null;
-
-function loadLesson(id) {
-    const data = courseData[id];
-    if (!data) return;
-
-    // THE FIX: Reset state on every load
-    edu_currentCourseId = id;
-    edu_currentScore = 0;
-    edu_quizHistory = [];
-
-    // Map Template Data
-    document.getElementById('lesson-title').innerText = data.title;
-    document.getElementById('lesson-difficulty').innerHTML = `<i class="fa-solid fa-signal"></i> ${data.difficulty}`;
-    document.getElementById('lesson-duration').innerHTML = `<i class="fa-regular fa-clock"></i> ${data.duration} Min`;
-    
-    const video = document.getElementById('lesson-video');
-    if(video) video.src = data.video;
-
-    const objectives = document.getElementById('lesson-objectives');
-    if(objectives) objectives.innerHTML = data.objectives.map(o => `<li>${o}</li>`).join('');
-
-    const notesGroup = document.getElementById('lesson-notes');
-    if(notesGroup) {
-        notesGroup.innerHTML = data.notes.map(n => `
-            <div class="accordion-item">
-                <div class="accordion-header" onclick="window.toggleAccordion(this)">
-                    ${n.title} <i class="fa-solid fa-chevron-down accordion-icon"></i>
-                </div>
-                <div class="accordion-content"><div class="accordion-body">${n.content}</div></div>
-            </div>`).join('');
-    }
-
-    resetQuizUI();
-    
-    // Toggle Hub Nav Visibility
-    const landNav = document.getElementById('landing-nav');
-    const lessNav = document.getElementById('lesson-nav');
-    if(landNav) landNav.classList.add('it-hidden');
-    if(lessNav) lessNav.classList.remove('it-hidden');
-}
-
-function resetQuizUI() {
-    const data = courseData[edu_currentCourseId];
-    const quizSection = document.getElementById('quiz-section');
-    if(!data || !data.quiz) { if(quizSection) quizSection.style.display = 'none'; return; }
-
-    if(quizSection) quizSection.style.display = 'flex';
-    const container = document.getElementById('dynamic-quiz-content');
-    container.innerHTML = data.quiz.map((q, idx) => `
-        <div id="q-${idx}" class="quiz-step">
-            <div class="quiz-question-text"><span>${idx + 1}.</span> <span>${q.q}</span></div>
-            <div class="quiz-options">${q.options.map((opt, oIdx) => `<button class="quiz-option-btn" onclick="checkAnswer(this, ${oIdx === q.correct}, ${idx})">${opt}</button>`).join('')}</div>
-            <div class="quiz-feedback" id="feedback-${idx}"></div>
-        </div>`).join('');
-
-    document.getElementById('quiz-intro').classList.add('active');
-    document.getElementById('quiz-results').classList.remove('active');
-}
-
-window.checkAnswer = function(btn, isCorrect, qIdx) {
-    const data = courseData[edu_currentCourseId];
-    const parent = document.getElementById(`q-${qIdx}`);
-    const feedback = document.getElementById(`feedback-${qIdx}`);
-    
-    if(isCorrect) {
-        btn.classList.add('correct');
-        feedback.innerHTML = '<span style="color:#2ECC71">Correct!</span>';
-        edu_currentScore++;
-    } else {
-        btn.classList.add('incorrect');
-        feedback.innerHTML = '<span style="color:#E74C3C">Incorrect.</span>';
-    }
-
-    parent.querySelectorAll('.quiz-option-btn').forEach(b => b.disabled = true);
-    edu_quizHistory.push({ q: data.quiz[qIdx].q, isCorrect: isCorrect });
-
-    setTimeout(() => {
-        parent.classList.remove('active');
-        if (qIdx + 1 < data.quiz.length) {
-            document.getElementById(`q-${qIdx + 1}`).classList.add('active');
-            updateQuizProgress(qIdx + 1);
-        } else {
-            showResults();
-        }
-    }, 1200);
-};
-
-function showResults() {
-    document.getElementById('quiz-results').classList.add('active');
-    document.getElementById('final-score').innerText = edu_currentScore;
-
-    if (edu_currentScore === courseData[edu_currentCourseId].quiz.length) {
-        if(typeof confetti === 'function') {
-            confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
-        }
-        const modal = document.getElementById('certificate-modal');
-        if(modal) modal.style.setProperty('display', 'flex', 'important');
-    }
-}
-
-window.closeCert = function() {
-    const modal = document.getElementById('certificate-modal');
-    if(modal) modal.style.setProperty('display', 'none', 'important');
-};
-
-function updateQuizProgress(idx) {
-    const total = courseData[edu_currentCourseId].quiz.length;
-    const fill = document.getElementById('progress-bar-fill');
-    const text = document.getElementById('progress-text');
-    if(fill) fill.style.width = ((idx + 1) / total * 100) + '%';
-    if(text) text.innerText = `Question ${idx + 1} of ${total}`;
-    const prog = document.getElementById('quiz-progress');
-    if(prog) prog.style.display = 'flex';
-}
-
-// ==========================================
-// 6. HOMEPAGE & INITIALIZATION
-// ==========================================
-
-function updateDateTime() {
-    const dateEl = document.getElementById('current-date');
-    const timeEl = document.getElementById('current-time');
-    if(!dateEl || !timeEl) return;
-    const now = new Date();
-    dateEl.textContent = now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-    timeEl.textContent = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-}
-
-document.addEventListener("DOMContentLoaded", function() {
-    // Start Clock
-    if(document.getElementById('current-date')) { updateDateTime(); setInterval(updateDateTime, 1000); }
-    
-    // Hash Routing for SPA Refresh
-    if(window.location.hash) {
-        const targetId = window.location.hash.substring(1);
-        if (typeof courseData !== 'undefined' && courseData[targetId]) {
-            loadLesson(targetId);
-        } else if (document.getElementById(targetId)) {
+    // 9. PERSISTENT HASH POLLING (The Fix for Hydration Errors)
+    var pollCount = 0;
+    var hashCheck = setInterval(function() {
+      pollCount++;
+      if (window.location.hash) {
+        var targetId = window.location.hash.substring(1);
+        var targetElement = document.getElementById(targetId);
+        if (targetElement) {
+          if (targetElement.classList.contains('it-hidden')) {
             window.switchView(targetId);
+          }
         }
+      }
+      if (pollCount > 20) clearInterval(hashCheck);
+    }, 100);
+
+    // 10. Filter/Sort Logic
+    function filterNews() {
+      const search = document.getElementById('search-input').value.toLowerCase();
+      const topic = document.getElementById('filter-topic').value;
+      const items = document.querySelectorAll('.news-item');
+      items.forEach(item => {
+        const text = item.innerText.toLowerCase();
+        const tags = item.getAttribute('data-tags').toLowerCase();
+        const matchSearch = text.includes(search);
+        const matchTopic = (topic === 'All') || tags.includes(topic.toLowerCase());
+        if (matchSearch && matchTopic) {
+          item.style.display = 'flex';
+        } else {
+          item.style.display = 'none';
+        }
+      });
     }
 
-    // Auto-hide empty elements helper
-    document.querySelectorAll('.auto-hide').forEach(el => {
-        if (el.innerText.trim().length === 0) el.style.display = 'none';
-    });
+    function sortNews() {
+      const order = document.getElementById('sort-order').value;
+      // Changed from 'grid-container' to 'news-container' to handle the unified grid
+      const grid = document.getElementById('news-container');
+      const items = Array.from(grid.children);
+      items.sort((a, b) => {
+        const dateA = new Date(a.getAttribute('data-date'));
+        const dateB = new Date(b.getAttribute('data-date'));
+        return (order === 'newest') ? dateB - dateA : dateA - dateB;
+      });
+      items.forEach(item => grid.appendChild(item));
+    }
+
+    // 11. Interest Capture Logic
+        window.captureInterest = function(btnElement, deliverableName) {
+            // Disable button immediately
+            const originalText = btnElement.innerHTML;
+            btnElement.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending...';
+            btnElement.disabled = true;
+
+            // 1. Gather Data (Assuming email is available in global scope or unknown)
+            const userEmail = window.analyticsUserEmail || "unknown@user.com"; 
+            const timestamp = new Date().toISOString();
+
+            const payload = {
+                email: userEmail,
+                domain: window.location.hostname,
+                path: window.location.pathname,
+                date: timestamp,
+                deliverable: deliverableName
+            };
+
+            // 2. Send to Google Sheets (Replace URL)
+            const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw3QwMuUpiPeRKEtV_wi2RvMGWTqffS8qe6M0iI7VbiXUrnn5pPez-QTIbexztbKsbR/exec"; 
+
+            fetch(SCRIPT_URL, {
+                method: "POST",
+                mode: "no-cors", 
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            })
+            .then(() => {
+                btnElement.classList.add('sent');
+                btnElement.innerHTML = '<i class="fa-solid fa-check"></i> Request Sent';
+            })
+            .catch(error => {
+                console.error("Error logging interest:", error);
+                btnElement.innerHTML = originalText;
+                btnElement.disabled = false;
+                alert("There was a slight issue sending your request. Please contact your account manager.");
+            });
+        };
+
+
 });
