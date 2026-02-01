@@ -1,13 +1,15 @@
 /**
- * INFOTRUST PORTAL MASTER SCRIPT - V3.3
- * Standardized logic for all 50+ portal pages.
+ * INFOTRUST PORTAL - MASTER SCRIPT (V2.1 - FULL REPAIR)
+ * Contains logic for Global Utils, API, Newsletter, and Education Hub.
  */
 
 // ==========================================
-// 1. GLOBAL UTILITIES (Accessibility & Share)
+// 1. GLOBAL UTILITIES
 // ==========================================
 window.toggleAccessibility = function() {
     document.body.classList.toggle('accessibility-mode');
+    const btns = document.querySelectorAll('.util-btn[onclick*="toggleAccessibility"]');
+    btns.forEach(btn => btn.classList.toggle('active'));
 };
 
 window.copyToClipboard = function() {
@@ -17,7 +19,8 @@ window.copyToClipboard = function() {
     dummy.select();
     document.execCommand('copy');
     document.body.removeChild(dummy);
-    document.querySelectorAll('.share-trigger').forEach(btn => {
+    const shareBtns = document.querySelectorAll('.share-trigger');
+    shareBtns.forEach(btn => {
         const originalHTML = btn.innerHTML;
         btn.innerHTML = 'Copied <i class="fa-solid fa-check"></i>';
         setTimeout(() => { btn.innerHTML = originalHTML; }, 2000);
@@ -25,146 +28,203 @@ window.copyToClipboard = function() {
 };
 
 // ==========================================
-// 2. THE MASTER NAVIGATOR (Handles Hub & Newsletter)
-// ==========================================
-window.switchView = function(viewId) {
-    const target = document.getElementById(viewId);
-    if (!target) return;
-
-    // Universal Hide
-    document.querySelectorAll('.view-section').forEach(el => el.classList.add('it-hidden'));
-    target.classList.remove('it-hidden');
-
-    // ROUTE A: Education Hub Lesson (With Data Waiter)
-    if (viewId.startsWith('view-') && !viewId.includes('archive') && !viewId.startsWith('view-20')) {
-        if (typeof window.courseData === 'undefined') {
-            setTimeout(() => window.switchView(viewId), 100);
-            return;
-        }
-        window.location.hash = viewId;
-        if (typeof loadLesson === 'function') loadLesson(viewId);
-    } 
-    // ROUTE B: Newsletter Detail or Archive
-    else if (viewId === 'view-archive' || viewId.startsWith('view-20') || viewId.startsWith('view-nov')) {
-        const archNav = document.getElementById('archive-nav');
-        const artNav = document.getElementById('article-nav');
-        if (viewId === 'view-archive') {
-            if (archNav) archNav.classList.remove('it-hidden');
-            if (artNav) artNav.classList.add('it-hidden');
-            if (typeof updateVisibility === 'function') updateVisibility();
-            history.pushState("", document.title, window.location.pathname + window.location.search);
-        } else {
-            if (archNav) archNav.classList.add('it-hidden');
-            if (artNav) artNav.classList.remove('it-hidden');
-            window.location.hash = viewId;
-        }
-    }
-    window.scrollTo(0,0);
-};
-
-// ==========================================
-// 3. API & TRACKING (Connectors)
+// 2. API CONNECTORS
 // ==========================================
 window.captureInterest = function(btnElement, deliverableName) {
     const originalText = btnElement.innerHTML;
     btnElement.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending...';
+    btnElement.disabled = true;
     const payload = {
         email: window.analyticsUserEmail || "unknown@user.com",
-        deliverable: deliverableName,
-        path: window.location.pathname
+        domain: window.location.hostname,
+        path: window.location.pathname,
+        deliverable: deliverableName
     };
-    fetch("https://script.google.com/macros/s/AKfycb3QwMuUpiPeRKEtV_wi2RvMGWTqffS8qe6M0iI7VbiXUrnn5pPez-QTIbexztbKsbR/exec", { 
-        method: "POST", mode: "no-cors", body: JSON.stringify(payload) 
-    }).then(() => {
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw3QwMuUpiPeRKEtV_wi2RvMGWTqffS8qe6M0iI7VbiXUrnn5pPez-QTIbexztbKsbR/exec"; 
+    fetch(SCRIPT_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(payload) })
+    .then(() => {
+        btnElement.classList.add('sent');
         btnElement.innerHTML = '<i class="fa-solid fa-check"></i> Request Sent';
-        btnElement.disabled = true;
+    })
+    .catch(() => {
+        btnElement.innerHTML = originalText;
+        btnElement.disabled = false;
     });
 };
 
 window.submitFeedback = function(e) {
     e.preventDefault();
+    const ratingInput = document.getElementById('ratingSlider');
+    if(!ratingInput) return;
     const data = { 
-        rating: document.getElementById('ratingSlider')?.value,
-        feedback: document.getElementById('feedbackNotes')?.value,
-        url: window.location.href
+        timestamp: new Date().toISOString(), 
+        url: window.location.href + (edu_currentCourseId ? ` (${edu_currentCourseId})` : ""), 
+        rating: ratingInput.value, 
+        feedback: document.getElementById('feedbackNotes')?.value || "" 
     };
-    fetch("https://script.google.com/macros/s/AKfycbxeHVZiDONjwbGlzgXSdTWYCNvZ0CiOhkV-9SAh2Jl5wzVxfA4rlb5RwYjSU8TUibzp/exec", { 
-        method: 'POST', mode: 'no-cors', body: JSON.stringify(data) 
-    }).then(() => {
+    const FEEDBACK_URL = "https://script.google.com/macros/s/AKfycbxeHVZiDONjwbGlzgXSdTWYCNvZ0CiOhkV-9SAh2Jl5wzVxfA4rlb5RwYjSU8TUibzp/exec"; 
+    fetch(FEEDBACK_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(data) })
+    .then(() => {
         document.getElementById('feedbackForm').style.display = 'none';
         document.getElementById('feedbackMessage').style.display = 'block';
     });
 };
 
+window.updateRatingDisplay = function(val) {
+    const display = document.getElementById('ratingValue');
+    if(display) display.innerText = val + "/5";
+};
+
 // ==========================================
-// 4. NEWSLETTER & FILTER LOGIC
+// 3. NAVIGATION & NEWSLETTER
 // ==========================================
-const BATCH_SIZE = 4;
+window.switchView = function(viewId) {
+    document.querySelectorAll('.view-section').forEach(el => el.classList.add('it-hidden'));
+    const target = document.getElementById(viewId);
+    if(target) target.classList.remove('it-hidden');
+    
+    if (typeof courseData !== 'undefined' && courseData[viewId]) {
+        window.location.hash = viewId;
+        loadLesson(viewId); 
+    } else if (viewId === 'view-archive') {
+        if(typeof window.updateVisibility === 'function') window.updateVisibility();
+        history.pushState("", document.title, window.location.pathname + window.location.search);
+    } else {
+        window.location.hash = viewId;
+    }
+    window.scrollTo(0,0);
+};
+
+const BATCH_SIZE = 4; 
 let visibleCount = BATCH_SIZE;
 
 window.updateVisibility = function() {
     const grid = document.getElementById('news-container');
     if (!grid) return;
     const items = Array.from(grid.children);
-    items.forEach((item, index) => { item.style.display = (index < visibleCount) ? 'flex' : 'none'; });
-    const btn = document.querySelector('.load-more-container');
-    if(btn) btn.style.display = (items.length > visibleCount) ? 'flex' : 'none';
+    items.forEach((item, index) => {
+        item.style.display = (index < visibleCount) ? 'flex' : 'none';
+    });
+    const btnContainer = document.querySelector('.load-more-container');
+    if(btnContainer) btnContainer.style.display = (items.length > visibleCount) ? 'flex' : 'none';
 };
 
-window.loadMoreItems = function() { visibleCount += 3; window.updateVisibility(); };
-
-window.filterNews = function() {
-    const search = document.getElementById('search-input')?.value.toLowerCase() || "";
-    const topic = document.getElementById('filter-topic')?.value || "All";
-    document.querySelectorAll('.news-item').forEach(item => {
-        const match = item.innerText.toLowerCase().includes(search) && (topic === 'All' || item.getAttribute('data-tags').includes(topic.toLowerCase()));
-        item.style.display = match ? 'flex' : 'none';
-    });
+window.loadMoreItems = function() {
+    visibleCount += 3;
+    window.updateVisibility();
 };
 
 // ==========================================
-// 5. EDUCATION HUB ENGINE (Namespaced)
+// 4. SHARED ACCORDIONS
+// ==========================================
+window.toggleAccordion = window.toggleFaq = function(header) {
+    header.classList.toggle('active');
+    const content = header.nextElementSibling;
+    if (content) {
+        if (content.style.maxHeight) {
+            content.style.maxHeight = null;
+            content.classList.remove('open');
+        } else {
+            content.classList.add('open');
+            content.style.maxHeight = content.scrollHeight + "px";
+        }
+    }
+};
+
+// ==========================================
+// 5. EDUCATION HUB CORE
 // ==========================================
 let edu_quizHistory = [];
 let edu_currentScore = 0;
 let edu_currentCourseId = null;
 
-window.loadLesson = function(id) {
-    const data = window.courseData[id];
+function loadLesson(id) {
+    const data = courseData[id];
     if (!data) return;
-    edu_currentCourseId = id; edu_currentScore = 0; edu_quizHistory = [];
+    edu_currentCourseId = id;
+    edu_currentScore = 0;
+    edu_quizHistory = [];
 
-    const safeSet = (id, val, html=false) => { const el = document.getElementById(id); if(el) html ? el.innerHTML=val : el.innerText=val; };
-    safeSet('lesson-title', data.title);
-    safeSet('lesson-difficulty', `<i class="fa-solid fa-signal"></i> ${data.difficulty}`, true);
-    safeSet('lesson-duration', `<i class="fa-regular fa-clock"></i> ${data.duration} Min`, true);
+    document.getElementById('lesson-title').innerText = data.title;
+    document.getElementById('lesson-difficulty').innerHTML = `<i class="fa-solid fa-signal"></i> ${data.difficulty}`;
+    document.getElementById('lesson-duration').innerHTML = `<i class="fa-regular fa-clock"></i> ${data.duration} Min`;
     
-    if(document.getElementById('lesson-video')) document.getElementById('lesson-video').src = data.video;
-    if(document.getElementById('lesson-notes')) {
-        document.getElementById('lesson-notes').innerHTML = data.notes.map(n => `
+    const videoEl = document.getElementById('lesson-video');
+    if (videoEl) videoEl.src = data.video;
+
+    const notesGroup = document.getElementById('lesson-notes');
+    if (notesGroup) {
+        notesGroup.innerHTML = data.notes.map(n => `
             <div class="accordion-item">
                 <div class="accordion-header" onclick="window.toggleAccordion(this)">
-                    ${n.title} <i class="fa-solid fa-chevron-down"></i>
+                    ${n.title} <i class="fa-solid fa-chevron-down accordion-icon"></i>
                 </div>
                 <div class="accordion-content"><div class="accordion-body">${n.content}</div></div>
             </div>`).join('');
     }
-    
-    document.getElementById('quiz-intro')?.classList.add('active');
-    document.getElementById('quiz-results')?.classList.remove('active');
-    document.getElementById('landing-nav')?.classList.add('it-hidden');
-    document.getElementById('lesson-nav')?.classList.remove('it-hidden');
+    resetQuizUI();
+}
+
+function resetQuizUI() {
+    const data = courseData[edu_currentCourseId];
+    const quizSection = document.getElementById('quiz-section');
+    if(!data || !data.quiz) { if(quizSection) quizSection.style.display = 'none'; return; }
+    if(quizSection) quizSection.style.display = 'flex';
+    const container = document.getElementById('dynamic-quiz-content');
+    container.innerHTML = data.quiz.map((q, idx) => `
+        <div id="q-${idx}" class="quiz-step">
+            <div class="quiz-question-text"><span>${idx + 1}.</span> <span>${q.q}</span></div>
+            <div class="quiz-options">${q.options.map((opt, oIdx) => `<button class="quiz-option-btn" onclick="checkAnswer(this, ${oIdx === q.correct}, ${idx})">${opt}</button>`).join('')}</div>
+            <div class="quiz-feedback" id="feedback-${idx}"></div>
+        </div>`).join('');
+    document.getElementById('quiz-intro').classList.add('active');
+    document.getElementById('quiz-results').classList.remove('active');
+}
+
+window.startQuiz = function() {
+    document.getElementById('quiz-intro').classList.remove('active');
+    document.getElementById('q-0')?.classList.add('active');
+    updateQuizProgress(0);
 };
 
-// ==========================================
-// 6. INITIALIZATION & HOMEPAGE WIDGETS
-// ==========================================
-window.toggleAccordion = function(header) {
-    header.classList.toggle('active');
-    const content = header.nextElementSibling;
-    if (content) content.style.maxHeight = content.style.maxHeight ? null : content.scrollHeight + "px";
+window.checkAnswer = function(btn, isCorrect, qIdx) {
+    const data = courseData[edu_currentCourseId];
+    const parent = document.getElementById(`q-${qIdx}`);
+    if(isCorrect) { btn.classList.add('correct'); edu_currentScore++; } else { btn.classList.add('incorrect'); }
+    parent.querySelectorAll('.quiz-option-btn').forEach(b => b.disabled = true);
+    edu_quizHistory.push({ q: data.quiz[qIdx].q, correct: isCorrect });
+    setTimeout(() => {
+        parent.classList.remove('active');
+        if (qIdx + 1 < data.quiz.length) {
+            document.getElementById(`q-${qIdx + 1}`).classList.add('active');
+            updateQuizProgress(qIdx + 1);
+        } else { showResults(); }
+    }, 1500);
 };
 
+function showResults() {
+    document.getElementById('quiz-results').classList.add('active');
+    document.getElementById('final-score').innerText = edu_currentScore;
+    if (edu_currentScore === courseData[edu_currentCourseId].quiz.length) {
+        if(typeof confetti === 'function') confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+        document.getElementById('certificate-modal').style.setProperty('display', 'flex', 'important');
+    }
+}
+
+window.closeCert = function() {
+    document.getElementById('certificate-modal').style.setProperty('display', 'none', 'important');
+};
+
+function updateQuizProgress(idx) {
+    const total = courseData[edu_currentCourseId].quiz.length;
+    document.getElementById('progress-bar-fill').style.width = ((idx + 1) / total * 100) + '%';
+    document.getElementById('progress-text').innerText = `Question ${idx + 1} of ${total}`;
+    document.getElementById('quiz-progress').style.display = 'flex';
+}
+
+// ==========================================
+// 6. INITIALIZATION
+// ==========================================
 function updateDateTime() {
     const dateEl = document.getElementById('current-date');
     const timeEl = document.getElementById('current-time');
@@ -177,8 +237,9 @@ function updateDateTime() {
 document.addEventListener("DOMContentLoaded", function() {
     if(document.getElementById('current-date')) { updateDateTime(); setInterval(updateDateTime, 1000); }
     if(window.location.hash) {
-        const tid = window.location.hash.substring(1);
-        if(document.getElementById(tid)) window.switchView(tid);
+        const targetId = window.location.hash.substring(1);
+        const targetElement = document.getElementById(targetId);
+        if(targetElement && targetElement.classList.contains('it-hidden')) window.switchView(targetId);
     }
     if(typeof window.updateVisibility === 'function') window.updateVisibility();
 });
