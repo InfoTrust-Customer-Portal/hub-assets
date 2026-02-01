@@ -1359,6 +1359,10 @@ window.updateTracker = function(url) {
     }
 };
 
+window.closeCert = function() {
+    document.getElementById('certificate-modal').style.setProperty('display', 'none', 'important');
+}; 
+
 
 // ==========================================
 // MASTER INITIALIZATION
