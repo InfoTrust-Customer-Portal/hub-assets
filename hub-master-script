@@ -210,4 +210,368 @@
         });
     };
 
+    //12. Education Hub Scripts
+
+let currentCourseId = null;
+
+    // Load Specific Lesson Data into Template
+    function loadLesson(id) {
+        const data = courseData[id];
+        if (!data) return;
+        currentCourseId = id;
+
+        // 1. Header Info
+        document.getElementById('lesson-title').innerText = data.title;
+        document.getElementById('lesson-difficulty').innerHTML = `<i class="fa-solid fa-signal"></i> ${data.difficulty}`;
+        document.getElementById('lesson-duration').innerHTML = `<i class="fa-regular fa-clock"></i> ${data.duration} Min`;
+        document.getElementById('lesson-updated').innerHTML = `<i class="fa-regular fa-calendar"></i> ${data.updated}`;
+
+        // 2. Video & Objectives
+        document.getElementById('lesson-video').src = data.video;
+        document.getElementById('lesson-objectives').innerHTML = data.objectives.map(o => `<li>${o}</li>`).join('');
+
+        // 3. Notes (Accordions)
+        const notesContainer = document.getElementById('lesson-notes');
+        notesContainer.innerHTML = '';
+        data.notes.forEach((note, index) => {
+            notesContainer.innerHTML += `
+                <div class="accordion-item">
+                    <div class="accordion-header" onclick="window.toggleAccordion(this)">
+                        ${note.title} <i class="fa-solid fa-chevron-down accordion-icon"></i>
+                    </div>
+                    <div class="accordion-content"><div class="accordion-body">${note.content}</div></div>
+                </div>
+            `;
+        });
+
+        // 4. Warning Panel (Optional)
+        const warnPanel = document.getElementById('lesson-warning-panel');
+        if (data.warningPanel) {
+            warnPanel.classList.remove('it-hidden');
+            document.getElementById('warning-table-body').innerHTML = data.warningPanel.map(w => 
+                `<tr><td>${w.type}</td><td>${w.cause}</td><td>${w.solution}</td></tr>`
+            ).join('');
+        } else {
+            warnPanel.classList.add('it-hidden');
+        }
+
+        // 5. Sidebar Tags
+        document.getElementById('lesson-tags').innerHTML = data.tags.map(t => `<span class="tool-tag">${t}</span>`).join('');
+
+        // 6. Sidebar Related & Resources - FIXED: Manual display handling
+        const relatedList = document.getElementById('lesson-related');
+        const cardRelated = document.getElementById('card-related');
+        if (data.related && data.related.length > 0) {
+            cardRelated.style.display = 'block';
+            relatedList.innerHTML = data.related.map(r => 
+                `<li><a onclick="openTraining('${r.linkId}')" style="cursor:pointer"><i class="fa-solid ${r.icon}"></i> ${r.title}</a></li>`
+            ).join('');
+        } else {
+            cardRelated.style.display = 'none';
+        }
+
+        const resourcesList = document.getElementById('lesson-resources');
+        const cardResources = document.getElementById('card-resources');
+        if (data.resources && data.resources.length > 0) {
+            cardResources.style.display = 'block';
+            resourcesList.innerHTML = data.resources.map(r => 
+                `<li><a href="${r.url}" target="_blank"><i class="fa-solid ${r.icon}"></i> ${r.title}</a></li>`
+            ).join('');
+        } else {
+            cardResources.style.display = 'none';
+        }
+        
+        // 7. Reset Quiz & Feedback
+        resetQuizUI();
+        document.getElementById('feedbackForm').reset();
+        document.getElementById('feedbackForm').style.display = 'block';
+        document.getElementById('feedbackMessage').style.display = 'none';
+
+        // 8. Show Template
+        document.getElementById('view-landing').classList.add('it-hidden');
+        document.getElementById('view-lesson-template').classList.remove('it-hidden');
+        
+        // 9. Nav & Scroll
+        document.getElementById('landing-nav').classList.add('it-hidden');
+        document.getElementById('lesson-nav').classList.remove('it-hidden');
+        setTimeout(() => window.scrollTo(0,0), 10);
+    }
+
+    // Main Switcher
+    window.openTraining = function(viewId) {
+        if (viewId === 'view-landing') {
+            history.pushState("", document.title, window.location.pathname + window.location.search);
+            document.getElementById('view-lesson-template').classList.add('it-hidden');
+            document.getElementById('view-landing').classList.remove('it-hidden');
+            document.getElementById('landing-nav').classList.remove('it-hidden');
+            document.getElementById('lesson-nav').classList.add('it-hidden');
+            setTimeout(() => window.scrollTo(0,0), 10);
+        } else {
+            // Check if valid course
+            if (courseData[viewId]) {
+                window.location.hash = viewId;
+                loadLesson(viewId);
+            }
+        }
+    };
+
+    // Polling for Hash
+    var pollCount = 0;
+    var hashCheck = setInterval(function() {
+        pollCount++;
+        if (window.location.hash) {
+            var targetId = window.location.hash.substring(1);
+            if (courseData[targetId]) {
+                loadLesson(targetId);
+            }
+        } else {
+             // Only force landing if no hash on first check
+             if (pollCount === 1) {
+                 document.getElementById('view-landing').classList.remove('it-hidden');
+             }
+        }
+        if (pollCount > 20) clearInterval(hashCheck);
+    }, 100);
+
+    // =========================================================
+    // 3. QUIZ ENGINE (DYNAMIC)
+    // =========================================================
+    let quizHistory = [];
+    let currentScore = 0;
+
+    function resetQuizUI() {
+        const data = courseData[currentCourseId];
+        // SAFETY: Only show quiz if data exists
+        const quizSection = document.getElementById('quiz-section');
+        if(!data || !data.quiz || data.quiz.length === 0) {
+            quizSection.style.display = 'none';
+            return;
+        }
+        quizSection.style.display = 'flex'; // Manual visible override
+
+        const container = document.getElementById('dynamic-quiz-content');
+        container.innerHTML = '';
+        
+        // Generate Questions HTML
+        data.quiz.forEach((q, idx) => {
+            let optionsHTML = '';
+            q.options.forEach((opt, optIdx) => {
+                const isCorrect = (optIdx === q.correct);
+                optionsHTML += `<button class="quiz-option-btn" onclick="checkAnswer(this, ${isCorrect}, ${idx})">${opt}</button>`;
+            });
+
+            container.innerHTML += `
+                <div id="q-${idx}" class="quiz-step">
+                    <div class="quiz-question-text"><span>${idx + 1}.</span> <span>${q.q}</span></div>
+                    <div class="quiz-options">${optionsHTML}</div>
+                    <div class="quiz-feedback" id="feedback-${idx}"></div>
+                </div>
+            `;
+        });
+
+        // Reset Steps
+        document.getElementById('quiz-intro').classList.add('active');
+        document.getElementById('quiz-results').classList.remove('active');
+        document.getElementById('quiz-progress').style.display = 'none';
+    }
+
+    window.startQuiz = function() {
+        document.getElementById('quiz-intro').classList.remove('active');
+        const firstQ = document.getElementById('q-0');
+        if(firstQ) firstQ.classList.add('active');
+        
+        currentScore = 0;
+        quizHistory = [];
+        updateQuizProgress(0);
+    };
+
+    function updateQuizProgress(currentIdx) {
+        const total = courseData[currentCourseId].quiz.length;
+        const bar = document.getElementById('progress-bar-fill');
+        const text = document.getElementById('progress-text');
+        
+        document.getElementById('quiz-progress').style.display = 'flex';
+        text.innerText = `Question ${currentIdx + 1} of ${total}`;
+        bar.style.width = ((currentIdx + 1) / total * 100) + '%';
+    }
+
+    window.checkAnswer = function(btn, isCorrect, qIdx) {
+        const data = courseData[currentCourseId];
+        const parent = document.getElementById(`q-${qIdx}`);
+        const feedback = document.getElementById(`feedback-${qIdx}`);
+        const btns = parent.querySelectorAll('.quiz-option-btn');
+
+        // Visuals
+        if(isCorrect) {
+            btn.classList.add('correct');
+            feedback.innerHTML = '<span style="color:#2ECC71"><i class="fa-solid fa-check"></i> Correct!</span>';
+            currentScore++;
+        } else {
+            btn.classList.add('incorrect');
+            feedback.innerHTML = '<span style="color:#E74C3C"><i class="fa-solid fa-xmark"></i> Incorrect.</span>';
+        }
+
+        // Lock buttons
+        btns.forEach(b => {
+            b.disabled = true;
+            if(b.onclick.toString().includes('true')) b.classList.add('correct');
+            if(!b.classList.contains('correct') && !b.classList.contains('incorrect')) {
+                 b.style.opacity = "0.5"; b.style.filter = "grayscale(1)";
+            }
+        });
+
+        // Save history
+        quizHistory.push({
+            q: data.quiz[qIdx].q,
+            userAns: btn.innerText,
+            correct: isCorrect,
+            correctAns: data.quiz[qIdx].options[data.quiz[qIdx].correct]
+        });
+
+        // Next Step
+        setTimeout(() => {
+            parent.classList.remove('active');
+            const nextIdx = qIdx + 1;
+            
+            if(nextIdx < data.quiz.length) {
+                // Show next question
+                document.getElementById(`q-${nextIdx}`).classList.add('active');
+                updateQuizProgress(nextIdx);
+            } else {
+                // Show results
+                showResults();
+            }
+        }, 1500);
+    };
+
+    function showResults() {
+        const resultsEl = document.getElementById('quiz-results');
+        resultsEl.classList.add('active');
+        document.getElementById('quiz-progress').style.display = 'none';
+        
+        const total = courseData[currentCourseId].quiz.length;
+        document.getElementById('final-score').innerText = currentScore;
+        const scoreSpan = document.getElementById('final-score');
+        
+        scoreSpan.style.color = (currentScore === total) ? "var(--brand-orange)" : "var(--brand-orange)";
+        
+        // Review
+        const container = document.getElementById('quiz-review-container');
+        container.innerHTML = '';
+        quizHistory.forEach((h, i) => {
+            const icon = h.correct ? '<i class="fa-solid fa-check"></i>' : '<i class="fa-solid fa-xmark"></i>';
+            const cls = h.correct ? '' : 'wrong';
+            const correctText = h.correct ? '' : `<div style="font-size:12px; color:#555; margin-top:4px;">Correct: ${h.correctAns}</div>`;
+            
+            container.innerHTML += `
+                <div class="review-item">
+                    <div class="review-q">${i+1}. ${h.q}</div>
+                    <div class="review-a ${cls}">${icon} Your Answer: ${h.userAns}</div>
+                    ${correctText}
+                </div>
+            `;
+        });
+
+        // Certificate
+        if(currentScore === total) {
+            if(typeof confetti === 'function') {
+                const rect = document.getElementById('quiz-section').getBoundingClientRect();
+                const x = (rect.left + rect.width/2) / window.innerWidth;
+                confetti({ particleCount: 150, spread: 70, origin: { x: x, y: 0.6 }, colors: ['#084A87', '#E67E22', '#2ECC71'] });
+            }
+            document.getElementById('cert-title').innerText = courseData[currentCourseId].title;
+            setTimeout(() => {
+                document.getElementById('certificate-modal').style.setProperty('display', 'flex', 'important');
+            }, 800);
+        }
+    }
+
+    // =========================================================
+    // 4. UTILITIES (ROBUST VERSION)
+    // =========================================================
+    
+    function filterCourses() {
+        const searchInput = document.getElementById('searchInput');
+        const diffFilter = document.getElementById('difficultyFilter');
+        
+        // Safety check: if elements don't exist, stop
+        if (!searchInput || !diffFilter) return;
+
+        const searchVal = searchInput.value.toLowerCase().trim();
+        const diffVal = diffFilter.value;
+        const cards = document.querySelectorAll('.course-card');
+
+        cards.forEach(card => {
+            // SAFE EXTRACTION: These lines prevent crashes if data is missing
+            const title = (card.getAttribute('data-title') || '').toLowerCase();
+            const tags = (card.getAttribute('data-tags') || '').toLowerCase();
+            const visibleText = card.innerText.toLowerCase(); 
+            const difficulty = card.getAttribute('data-difficulty') || 'Beginner'; // Default to Beginner if missing
+
+            // Logic
+            const matchesSearch = title.includes(searchVal) || tags.includes(searchVal) || visibleText.includes(searchVal);
+            const matchesDiff = (diffVal === 'All') || (difficulty === diffVal);
+
+            if (matchesSearch && matchesDiff) {
+                card.style.display = 'flex';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
+
+    function sortCourses() {
+        const sortSelect = document.getElementById('sortOrder');
+        const grid = document.getElementById('courseGrid');
+        if (!sortSelect || !grid) return;
+
+        const sortVal = sortSelect.value;
+        const cards = Array.from(grid.querySelectorAll('.course-card'));
+        const diffWeight = { 'Beginner': 1, 'Intermediate': 2, 'Advanced': 3 };
+
+        cards.sort((a, b) => {
+            // SAFE EXTRACTION: Handle missing/bad data gracefully
+            const durA = parseInt(a.getAttribute('data-duration')) || 0;
+            const durB = parseInt(b.getAttribute('data-duration')) || 0;
+            
+            const titleA = (a.getAttribute('data-title') || '').toLowerCase();
+            const titleB = (b.getAttribute('data-title') || '').toLowerCase();
+            
+            // Normalize difficulty to Title Case to match dictionary keys
+            let diffStrA = (a.getAttribute('data-difficulty') || 'Beginner');
+            diffStrA = diffStrA.charAt(0).toUpperCase() + diffStrA.slice(1).toLowerCase();
+            
+            let diffStrB = (b.getAttribute('data-difficulty') || 'Beginner');
+            diffStrB = diffStrB.charAt(0).toUpperCase() + diffStrB.slice(1).toLowerCase();
+
+            const valA = diffWeight[diffStrA] || 0;
+            const valB = diffWeight[diffStrB] || 0;
+
+            // Sort Logic
+            if (sortVal === 'duration-asc') return durA - durB;
+            if (sortVal === 'duration-desc') return durB - durA;
+            if (sortVal === 'az') return titleA.localeCompare(titleB);
+            if (sortVal === 'difficulty-asc') return valA - valB;
+            if (sortVal === 'difficulty-desc') return valB - valA;
+            return 0; // Default
+        });
+
+        // Re-append sorted cards to the grid
+        cards.forEach(card => grid.appendChild(card));
+    }
+
+    function clearFilters() {
+        const searchInput = document.getElementById('searchInput');
+        const diffFilter = document.getElementById('difficultyFilter');
+        const sortOrder = document.getElementById('sortOrder');
+
+        if(searchInput) searchInput.value = "";
+        if(diffFilter) diffFilter.value = "All";
+        if(sortOrder) sortOrder.value = "default";
+        
+        filterCourses();
+        sortCourses();
+    }
+
+
 
