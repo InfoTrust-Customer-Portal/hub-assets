@@ -111,6 +111,45 @@ window.updateRatingDisplay = function(val) {
     if(display) display.innerText = val + "/5";
 };
 
+window.captureInterest = function(btnElement, deliverableName) {
+        // Disable button immediately
+        const originalText = btnElement.innerHTML;
+        btnElement.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending...';
+        btnElement.disabled = true;
+
+        // 1. Gather Data (Assuming email is available in global scope or unknown)
+        const userEmail = window.analyticsUserEmail || "unknown@user.com"; 
+        const timestamp = new Date().toISOString();
+
+        const payload = {
+            email: userEmail,
+            domain: window.location.hostname,
+            path: window.location.pathname,
+            date: timestamp,
+            deliverable: deliverableName
+        };
+
+        // 2. Send to Google Sheets (Replace URL)
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw3QwMuUpiPeRKEtV_wi2RvMGWTqffS8qe6M0iI7VbiXUrnn5pPez-QTIbexztbKsbR/exec"; 
+
+        fetch(SCRIPT_URL, {
+            method: "POST",
+            mode: "no-cors", 
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        })
+        .then(() => {
+            btnElement.classList.add('sent');
+            btnElement.innerHTML = '<i class="fa-solid fa-check"></i> Request Sent';
+        })
+        .catch(error => {
+            console.error("Error logging interest:", error);
+            btnElement.innerHTML = originalText;
+            btnElement.disabled = false;
+            alert("There was a slight issue sending your request. Please contact your account manager.");
+        });
+    };
+
 // ==========================================
 // 4. NEWSLETTER ARCHIVE (Specific Helpers)
 // ==========================================
