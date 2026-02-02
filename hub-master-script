@@ -367,6 +367,53 @@
                 content.style.maxHeight = content.scrollHeight + "px";
             }
         };
+
+(function() {
+    // =================================================================
+    // PLATINUM GLOBAL REFRESH (Polished Version)
+    // 1. Structural Check for Dropdown Arrows (Menu works perfectly)
+    // 2. Same-Page Anchor Check (TOC jumps smoothly without reloading)
+    // 3. Forces Hard Refresh on everything else.
+    // =================================================================
+
+    document.body.addEventListener('click', function(e) {
+        
+        const target = e.target;
+        const button = target.closest('button');
+
+        // --- 1. DROPDOWN PROTECTION (Arrow Check) ---
+        if (button) {
+            const iconWrapper = target.closest('div');
+            // If the div is a direct child of the button, it's the right arrow.
+            if (iconWrapper && iconWrapper.parentElement === button) {
+                return; // Let menu expand
+            }
+        }
+
+        const link = target.closest('a');
+
+        // --- Safety Checks ---
+        if (!link || !link.href) return; 
+        if (link.getAttribute('href').startsWith('#') || 
+            link.getAttribute('href').startsWith('javascript')) return;
+        if (e.metaKey || e.ctrlKey || e.shiftKey) return;
+
+        // --- 2. ANCHOR LINK POLISH (The New Tweak) ---
+        // If the link goes to the SAME page but just a different section (hash),
+        // we should let the browser scroll smoothly instead of reloading.
+        if (link.pathname === window.location.pathname && link.hash) {
+            return; // It's just a jump on the current page. Let it happen.
+        }
+
+        // --- 3. GLOBAL FORCE REFRESH ---
+        if (link.origin === window.location.origin) {
+            e.preventDefault();
+            e.stopPropagation();
+            window.location.href = link.href;
+        }
+
+    }, true); 
+})();
         
         window.closeCert = function() {
             document.getElementById('certificate-modal').style.setProperty('display', 'none', 'important');
