@@ -212,7 +212,7 @@
 
     //12. Education Hub Scripts
 
-let currentCourseId = null;
+    let currentCourseId = null;
 
     // Load Specific Lesson Data into Template
     function loadLesson(id) {
@@ -230,16 +230,16 @@ let currentCourseId = null;
         document.getElementById('lesson-video').src = data.video;
         document.getElementById('lesson-objectives').innerHTML = data.objectives.map(o => `<li>${o}</li>`).join('');
 
-        // 3. Notes (Accordions)
+        // 3. Notes (dropdowns)
         const notesContainer = document.getElementById('lesson-notes');
         notesContainer.innerHTML = '';
         data.notes.forEach((note, index) => {
             notesContainer.innerHTML += `
-                <div class="accordion-item">
-                    <div class="accordion-header" onclick="window.toggleAccordion(this)">
-                        ${note.title} <i class="fa-solid fa-chevron-down accordion-icon"></i>
+                <div class="dropdown-item">
+                    <div class="dropdown-header" onclick="window.toggledropdown(this)">
+                        ${note.title} <i class="fa-solid fa-chevron-down dropdown-icon"></i>
                     </div>
-                    <div class="accordion-content"><div class="accordion-body">${note.content}</div></div>
+                    <div class="dropdown-content"><div class="dropdown-body">${note.content}</div></div>
                 </div>
             `;
         });
@@ -572,6 +572,22 @@ let currentCourseId = null;
         filterCourses();
         sortCourses();
     }
+
+    window.toggleDropdown = function(header) {
+        header.classList.toggle('active');
+        var content = header.nextElementSibling;
+        if (content.style.maxHeight) {
+            content.style.maxHeight = null;
+            content.classList.remove('open');
+        } else {
+            content.classList.add('open');
+            content.style.maxHeight = content.scrollHeight + "px";
+        }
+    };
+    
+    window.closeCert = function() {
+        document.getElementById('certificate-modal').style.setProperty('display', 'none', 'important');
+    }; 
 
 
 
