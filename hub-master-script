@@ -210,6 +210,169 @@
         });
     };
 
+    //Education Hub Lesson Page 
+
+     (function() {
+        let currentScore = 0;
+        let quizHistory = [];
+        let currentQuestionIndex = 0;
+        let totalQuestions = 0;
+
+        // 2. INITIALIZATION LOGIC FOR SPAs
+        // This checks if the browser is ALREADY loaded (Navigation from Home)
+        // vs Fresh Load (Direct Link)
+        function initTrainingPage() {
+            const questions = document.querySelectorAll('.quiz-question-step');
+            if(questions.length > 0) {
+                totalQuestions = questions.length;
+                const totalEl = document.getElementById('total-questions');
+                if(totalEl) totalEl.innerText = totalQuestions;
+                
+                // Ensure intro is active
+                const intro = document.getElementById('quiz-intro');
+                if(intro) intro.classList.add('active');
+            }
+        }
+
+        if (document.readyState === 'complete' || document.readyState === 'interactive') {
+            // Page is already loaded (SPA navigation) - Run immediately!
+            initTrainingPage();
+        } else {
+            // Page is fresh loading - Wait for it
+            document.addEventListener('DOMContentLoaded', initTrainingPage);
+        }
+
+        // 3. EXPOSE FUNCTIONS
+        // We attach these to window so your HTML buttons (onclick="...") can find them.
+        
+        // --- QUIZ LOGIC ---
+        window.startQuiz = function() {
+            document.getElementById('quiz-intro').classList.remove('active');
+            document.getElementById('quiz-q-0').classList.add('active');
+            
+            currentScore = 0;
+            currentQuestionIndex = 0;
+            quizHistory = [];
+            
+            updateProgressBar();
+            document.getElementById('quiz-progress').style.display = 'flex';
+        };
+
+        window.handleAnswerClick = function(btn) {
+            const isCorrect = btn.getAttribute('data-correct') === 'true';
+            const parentStep = btn.closest('.quiz-step');
+            const feedbackEl = parentStep.querySelector('.quiz-feedback');
+            const questionText = parentStep.querySelector('.q-text').innerText;
+            
+            // Find correct answer text
+            let correctAnswerText = "Unknown";
+            const buttons = parentStep.querySelectorAll('.quiz-option-btn');
+            buttons.forEach(b => {
+                if(b.getAttribute('data-correct') === 'true') correctAnswerText = b.innerText;
+            });
+
+            // UI Updates
+            if (isCorrect) {
+                btn.classList.add('correct');
+                feedbackEl.innerHTML = '<span style="color:#2ECC71"><i class="fa-solid fa-check"></i> Correct!</span>';
+                currentScore++;
+            } else {
+                btn.classList.add('incorrect');
+                feedbackEl.innerHTML = '<span style="color:#E74C3C"><i class="fa-solid fa-xmark"></i> Incorrect.</span>';
+            }
+
+            // Lock buttons
+            buttons.forEach(b => {
+                b.disabled = true;
+                if (b.getAttribute('data-correct') === 'true') b.classList.add('correct');
+                else if (!b.classList.contains('incorrect')) {
+                    b.style.opacity = "0.5"; b.style.filter = "grayscale(1)";
+                }
+            });
+
+            // Save History
+            quizHistory.push({
+                q: questionText,
+                userAns: btn.innerText,
+                correct: isCorrect,
+                correctAns: correctAnswerText
+            });
+
+            // Move to next
+            setTimeout(() => {
+                parentStep.classList.remove('active');
+                currentQuestionIndex++;
+                
+                const nextStep = document.getElementById(`quiz-q-${currentQuestionIndex}`);
+                if (nextStep) {
+                    nextStep.classList.add('active');
+                    updateProgressBar();
+                } else {
+                    showResults();
+                }
+            }, 1500);
+        };
+
+        function updateProgressBar() {
+            const bar = document.getElementById('progress-bar-fill');
+            const text = document.getElementById('progress-text');
+            if(text) text.innerText = `Question ${currentQuestionIndex + 1} of ${totalQuestions}`;
+            if(bar) bar.style.width = ((currentQuestionIndex + 1) / totalQuestions * 100) + '%';
+        }
+
+        function showResults() {
+            document.getElementById('quiz-progress').style.display = 'none';
+            document.getElementById('quiz-results').classList.add('active');
+            document.getElementById('final-score').innerText = currentScore;
+            
+            // Render Review
+            const container = document.getElementById('quiz-review-container');
+            container.innerHTML = '';
+            
+            quizHistory.forEach((h, i) => {
+                const icon = h.correct ? '<i class="fa-solid fa-check"></i>' : '<i class="fa-solid fa-xmark"></i>';
+                const cls = h.correct ? '' : 'wrong';
+                const correctText = h.correct ? '' : `<div style="font-size:12px; color:#555; margin-top:4px;">Correct: ${h.correctAns}</div>`;
+                
+                container.innerHTML += `
+                    <div class="review-item">
+                        <div class="review-q">${i+1}. ${h.q}</div>
+                        <div class="review-a ${cls}">${icon} Your Answer: ${h.userAns}</div>
+                        ${correctText}
+                    </div>
+                `;
+            });
+
+            // Celebration
+            if (currentScore === totalQuestions) {
+                if (typeof confetti === 'function') {
+                    const rect = document.getElementById('quiz-section').getBoundingClientRect();
+                    const x = (rect.left + rect.width/2) / window.innerWidth;
+                    confetti({ particleCount: 150, spread: 70, origin: { x: x, y: 0.6 }, colors: ['#084A87', '#E67E22', '#2ECC71'] });
+                }
+                setTimeout(() => {
+                    document.getElementById('certificate-modal').style.setProperty('display', 'flex', 'important');
+                }, 800);
+            }
+        }
+        
+        // --- LOCAL ACCORDION (Renamed to prevent conflict with global FAQ) ---
+        window.toggleLocalAccordion = function(header) {
+            header.classList.toggle('active');
+            var content = header.nextElementSibling;
+            if (content.style.maxHeight) {
+                content.style.maxHeight = null;
+                content.classList.remove('open');
+            } else {
+                content.classList.add('open');
+                content.style.maxHeight = content.scrollHeight + "px";
+            }
+        };
+        
+        window.closeCert = function() {
+            document.getElementById('certificate-modal').style.setProperty('display', 'none', 'important');
+        };
+
 
 
 
