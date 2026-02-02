@@ -212,167 +212,1121 @@
 
     //Education Hub Lesson Page 
 
-        let currentScore = 0;
-        let quizHistory = [];
-        let currentQuestionIndex = 0;
-        let totalQuestions = 0;
-
-        // 2. INITIALIZATION LOGIC FOR SPAs
-        // This checks if the browser is ALREADY loaded (Navigation from Home)
-        // vs Fresh Load (Direct Link)
-        function initTrainingPage() {
-            const questions = document.querySelectorAll('.quiz-question-step');
-            if(questions.length > 0) {
-                totalQuestions = questions.length;
-                const totalEl = document.getElementById('total-questions');
-                if(totalEl) totalEl.innerText = totalQuestions;
-                
-                // Ensure intro is active
-                const intro = document.getElementById('quiz-intro');
-                if(intro) intro.classList.add('active');
-            }
-        }
-
-        if (document.readyState === 'complete' || document.readyState === 'interactive') {
-            // Page is already loaded (SPA navigation) - Run immediately!
-            initTrainingPage();
-        } else {
-            // Page is fresh loading - Wait for it
-            document.addEventListener('DOMContentLoaded', initTrainingPage);
-        }
-
-        // 3. EXPOSE FUNCTIONS
-        // We attach these to window so your HTML buttons (onclick="...") can find them.
+       const courseData = {
+        "view-unlocking-audience-insights-building-custom-reports-in-ga4": {
+            title: "Unlocking Audience Insights: Building Custom Reports in GA4",
+            duration: "7",
+            difficulty: "Intermediate",
+            updated: "Feb 2026",
+            tags: ["Analytics", "GA4", "Reporting"],
+            img: "https://images.unsplash.com/photo-1551288049-bbbda5366391?auto=format&fit=crop&q=80&w=800",
+            excerpt: "Learn the strategic value of audience analysis and how to build high-impact custom Free Form Exploration reports in GA4.",
+            video: "https://www.loom.com/embed/879fb1d3fdc549b08dc3ed3bee0725bf",
+            objectives: [
+                "The strategic value of analyzing audience demographics, interests, and behaviors to customize marketing efforts.",
+                "An overview of primary GA4 audience reports: User Explorer, Demographics, and Technology.",
+                "Step-by-step instructions on building a custom 'Free Form' Exploration report.",
+                "How to configure dimensions, metrics, and filters to isolate specific user groups."
+            ],
+            notes: [
+                {
+                    title: "1. The Value of Audience Reporting & Standard Reports",
+                    content: "<p>Pinpointing specific demographics and behaviors allows brands to expand reach and customize marketing. Key standard reports include:</p><ul><li><strong>User Explorer Report:</strong> Individual interaction data.</li><li><strong>Demographics Report:</strong> Age and gender data.</li><li><strong>Technology Report:</strong> Device and OS insights.</li></ul>"
+                },
+                {
+                    title: "2. Building a Custom Exploration Report",
+                    content: "<p>Navigate to the <strong>Explore</strong> tab and select a Blank Template. Set your variables by choosing a custom date range and adding:</p><ul><li><strong>Dimensions:</strong> Age, Gender, Device Category, Country</li><li><strong>Metrics:</strong> Sessions, Bounce Rate, Active Users</li></ul>"
+                },
+                {
+                    title: "3. Analyzing and Filtering Data",
+                    content: "<p>Visualize data by dragging Dimensions to Rows and Metrics to Values. Note that GA4 often includes a high volume of <em>\"Unknown\"</em> users for age and gender. Use the <strong>Filter</strong> option (e.g., Country contains \"United States\") to drill down into specific cohorts.</p>"
+                },
+                {
+                    title: "4. Activity: International Device Analysis",
+                    content: "<p><strong>Scenario:</strong> A team needs to know if Canadian users prefer Mobile or Desktop.</p><p>Using the GA4 Demo Account, create a Blank Exploration with Country/Device Category and Active Users/Sessions. Apply a filter for \"Canada\" to identify the top device category.</p>"
+                }
+            ],
+            quiz: [
+                {
+                    q: "Which standard GA4 report is best suited for understanding how individual users interact with your website or app?",
+                    options: ["Demographics Report", "User Explorer Report", "Technology Report"],
+                    correct: 1
+                },
+                {
+                    q: "When analyzing Age and Gender dimensions in GA4 compared to Universal Analytics (UA), what significant difference should you expect?",
+                    options: ["GA4 removes all age data for privacy", "GA4 includes a large volume of \"Unknown\" users", "GA4 only tracks users under 18"],
+                    correct: 1
+                },
+                {
+                    q: "In the Custom Exploration demo, which field do you use to isolate data so it only shows users from the \"United States\"?",
+                    options: ["Segments", "Filters", "Columns"],
+                    correct: 1
+                }
+            ],
+            related: [
+                { title: "GA Explore Reports", icon: "fa-play-circle", linkId: "view-ga-explore-reports" },
+                { title: "Unlocking User Insights", icon: "fa-play-circle", linkId: "view-intro-to-ga4-audiences" },
+                { title: "Configuring Audiences in GA", icon: "fa-play-circle", linkId: "view-configuring-audiences-key-events" }
+            ],
+            resources: [
+                { title: "GA4 Audience Overview", icon: "fa-external-link-alt", url: "https://infotrust.com/articles/overview-of-audiences-in-google-analytics-4/" },
+                { title: "GA Demo Account", icon: "fa-vial", url: "https://support.google.com/analytics/answer/6367342" }
+            ]
+        },
         
-        // --- QUIZ LOGIC ---
-        window.startQuiz = function() {
-            document.getElementById('quiz-intro').classList.remove('active');
-            document.getElementById('quiz-q-0').classList.add('active');
-            
-            currentScore = 0;
-            currentQuestionIndex = 0;
-            quizHistory = [];
-            
-            updateProgressBar();
-            document.getElementById('quiz-progress').style.display = 'flex';
-        };
-
-        window.handleAnswerClick = function(btn) {
-            const isCorrect = btn.getAttribute('data-correct') === 'true';
-            const parentStep = btn.closest('.quiz-step');
-            const feedbackEl = parentStep.querySelector('.quiz-feedback');
-            const questionText = parentStep.querySelector('.q-text').innerText;
-            
-            // Find correct answer text
-            let correctAnswerText = "Unknown";
-            const buttons = parentStep.querySelectorAll('.quiz-option-btn');
-            buttons.forEach(b => {
-                if(b.getAttribute('data-correct') === 'true') correctAnswerText = b.innerText;
-            });
-
-            // UI Updates
-            if (isCorrect) {
-                btn.classList.add('correct');
-                feedbackEl.innerHTML = '<span style="color:#2ECC71"><i class="fa-solid fa-check"></i> Correct!</span>';
-                currentScore++;
-            } else {
-                btn.classList.add('incorrect');
-                feedbackEl.innerHTML = '<span style="color:#E74C3C"><i class="fa-solid fa-xmark"></i> Incorrect.</span>';
-            }
-
-            // Lock buttons
-            buttons.forEach(b => {
-                b.disabled = true;
-                if (b.getAttribute('data-correct') === 'true') b.classList.add('correct');
-                else if (!b.classList.contains('incorrect')) {
-                    b.style.opacity = "0.5"; b.style.filter = "grayscale(1)";
+        "view-user-engagement-metrics-in-ga": {
+            title: "User Engagement Metrics in GA",
+            duration: "16",
+            difficulty: "Intermediate",
+            updated: "April 2024",
+            tags: ["Analytics", "Engagement", "GA4", "Metrics"],
+            img: "https://images.unsplash.com/photo-1551288049-bbbda5366391?auto=format&fit=crop&q=80&w=800",
+            excerpt: "Learn how GA4 defines and tracks engaged sessions, and how to use engagement rate and time to measure business value.",
+            video: "https://www.loom.com/embed/71fa4f6f4f3b4ee887c7f057f86a2929",
+            objectives: [
+                "The business value of tracking user engagement for retention and conversion.",
+                "The technical criteria (time, events, and views) that qualify a session as \"engaged\" in GA4.",
+                "How to utilize and interpret key metrics like Engagement Rate and Average Engagement Time.",
+                "Techniques for using standard reports and Exploration Segments to uncover behavioral insights."
+            ],
+            notes: [
+                {
+                    title: "1. The Business Value of User Engagement",
+                    content: "<p>User engagement refers to the interaction and interest users have with products via a website or application. Key benefits include:</p><ul><li><strong>Improved retention:</strong> Reducing churn by keeping users active.</li><li><strong>Higher conversion rates:</strong> Users are more likely to perform valuable actions when engaged.</li><li><strong>User satisfaction:</strong> Identifying preferences for product improvements and content personalization.</li></ul>"
+                },
+                {
+                    title: "2. Defining an \"Engaged Session\" in GA4",
+                    content: "<p>In GA4, a session is technically \"Engaged\" if it meets at least <strong>one</strong> of these criteria:</p><ul><li>Lasts longer than 10 seconds.</li><li>Contains 2 or more page views.</li><li>Performs 1 or more conversion events.</li></ul><p>While the default is 10 seconds, this can be adjusted (up to 60 seconds) in the Data Stream settings. GA4 specifically tracks \"foreground\" time, stopping the timer if the user switches tabs.</p>"
+                },
+                {
+                    title: "3. Key Engagement Metrics Explained",
+                    content: "<ul><li><strong>Engagement Rate:</strong> The percentage of total sessions that were engaged (the inverse of Bounce Rate).</li><li><strong>Engaged Sessions per User:</strong> Calculated as (Engaged Sessions / Total Users) to measure interest depth.</li><li><strong>Average Engagement Time:</strong> Replaces UA's \"Time on Page,\" measuring the average time the site was actually in the foreground.</li></ul>"
+                },
+                {
+                    title: "4. Interpreting Engagement Reports",
+                    content: "<p>Use the <strong>Pages and Screens Report</strong> to find high-traffic pages with low engagement, which may indicate technical issues or poor design. <strong>Acquisition Reports</strong> help identify which marketing sources bring the most engaged users, while <strong>Retention Reports</strong> visualize how new vs. returning users interact over time.</p>"
+                },
+                {
+                    title: "5. Advanced Segmentation",
+                    content: "<p>Exploration Reports allow for deeper analysis using Segments. You can create subsets of users who performed specific actions (like \"select_content\") to isolate high-value behavior patterns and use those insights for retargeting similar audiences.</p>"
                 }
-            });
-
-            // Save History
-            quizHistory.push({
-                q: questionText,
-                userAns: btn.innerText,
-                correct: isCorrect,
-                correctAns: correctAnswerText
-            });
-
-            // Move to next
-            setTimeout(() => {
-                parentStep.classList.remove('active');
-                currentQuestionIndex++;
-                
-                const nextStep = document.getElementById(`quiz-q-${currentQuestionIndex}`);
-                if (nextStep) {
-                    nextStep.classList.add('active');
-                    updateProgressBar();
-                } else {
-                    showResults();
+            ],
+            quiz: [
+                {
+                    q: "Which of the following is NOT one of the default criteria for a GA4 \"Engaged Session\"?",
+                    options: ["The session lasts longer than 10 seconds", "The user views 2 or more pages", "The user scrolls 50% of the page depth"],
+                    correct: 2
+                },
+                {
+                    q: "You notice a specific landing page has high traffic but a very low Engagement Rate. What is the most likely cause?",
+                    options: ["The page is loading too fast", "The content does not match the expectation set by the marketing source", "The user spent more than 10 seconds on the page"],
+                    correct: 1
+                },
+                {
+                    q: "Where can you adjust the timer used to calculate whether a session is considered \"engaged\"?",
+                    options: ["Explore Reports", "Data Stream Settings", "User Acquisition Report"],
+                    correct: 1
                 }
-            }, 1500);
-        };
+            ],
+            related: [
+                { title: "Intro to GA", icon: "fa-play-circle", linkId: "view-intro-to-ga" },
+                { title: "Navigating GA Explore Reports", icon: "fa-play-circle", linkId: "view-explore-reports" },
+                { title: "GA Interface Walkthrough", icon: "fa-play-circle", linkId: "view-ga4-interface-walkthrough-navigating-your-data" }
+            ],
+            resources: [
+                { title: "Engagement Metrics Documentation", icon: "fa-book", url: "https://support.google.com/analytics/answer/11109416?hl=en" }
+            ]
+        },
+        
+        "view-ga4-channel-groups-scoping-and-attribution-explained": {
+            title: "GA4 Channel Groups: Scoping and Attribution Explained",
+            duration: "11",
+            difficulty: "Intermediate",
+            updated: "March 2024",
+            tags: ["Analytics", "GA4", "Attribution", "Reporting"],
+            img: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=800",
+            excerpt: "Master the critical differences between First User, Session, and Event scopes to ensure your GA4 reporting and attribution analysis are accurate.",
+            video: "https://www.loom.com/embed/258a20abec734678acdd08a6ebae33d6",
+            objectives: [
+                "Distinguish between the three main scopes: First User, Session, and Event (Conversion) channel groups.",
+                "Understand the attribution models associated with each scope (Paid/Organic Last Click vs. Data-Driven Attribution).",
+                "Navigate GA4 Standard, Advertising, and Exploration reports to locate the correct data.",
+                "Identify and resolve compatibility issues between dimensions and metrics in Exploration reports."
+            ],
+            notes: [
+                {
+                    title: "1. Understanding Data Scopes in GA4",
+                    content: "<p>GA4 organizes data using 'scopes.' Understanding these is critical for accurate reporting:</p><ul><li><strong>User Scope (First User):</strong> Identifies the channel a user came from the very first time they visited the site.</li><li><strong>Session Scope:</strong> Identifies the channel a user came from for a specific session (visit).</li><li><strong>Event Scope (Conversion):</strong> Often lacks a prefix. These attribute a specific conversion event to a channel.</li></ul><p><strong>Hierarchy:</strong> Users can have multiple sessions; sessions can have multiple events/conversions.</p>"
+                },
+                {
+                    title: "2. Deep Dive: First User & Session Scopes",
+                    content: "<p><strong>First User Channel Group:</strong> Used to understand how a user first discovered the site. It remains consistent across all future sessions. Uses the <em>Paid and Organic Channels Last-Click</em> model.</p><p><strong>Session Channel Group:</strong> Used to understand the source of a specific session. This can change from visit to visit for the same user. Also uses the <em>Paid and Organic Channels Last-Click</em> model.</p>"
+                },
+                {
+                    title: "3. Deep Dive: Event Scoped (Conversion) Groups",
+                    content: "<p><strong>Event Scoped Channel Group:</strong> Usually appears without a prefix (e.g., 'Default Channel Group') in Advertising reports. It refers only to sessions where a conversion event occurred.</p><p><strong>Attribution Model:</strong> Data-Driven Attribution (DDA) is the default for these groups, though it can be adjusted in Admin settings. Note: If used in isolation, conversion rates will appear as 100% because the scope only includes converting sessions.</p>"
+                },
+                {
+                    title: "4. Locating Reports & Exploration Tips",
+                    content: "<p><strong>Standard Reports:</strong> User Acquisition uses 'First User' dimensions, while Traffic Acquisition uses 'Session' dimensions.</p><p><strong>Explorations:</strong> When building custom reports, ensure your Metrics and Dimensions share the same scope. If a metric is grayed out, it is likely incompatible with the scope of the dimensions you have selected.</p>"
+                }
+            ],
+            quiz: [
+                {
+                    q: "Which attribution model is used by default for the 'First User' and 'Session' channel groups?",
+                    options: ["Data-Driven Attribution", "Paid and Organic Channels Last-Click", "Linear Attribution"],
+                    correct: 1
+                },
+                {
+                    q: "If you are looking at the 'Traffic Acquisition' report in GA4, which scope are you primarily analyzing?",
+                    options: ["Session Scope", "First User Scope", "Event Scope"],
+                    correct: 0
+                },
+                {
+                    q: "Why might a dimension or metric appear grayed out when building a custom Exploration report?",
+                    options: ["You do not have admin permissions", "The data hasn't processed yet", "There is a scoping mismatch between variables"],
+                    correct: 2
+                }
+            ],
+            related: [
+                { title: "Unlocking Campaign Insights", icon: "fa-play-circle", linkId: "view-unlocking-campaign-insights-data-driven-attribution-in-ga4" }
+            ],
+            resources: [
+                { title: "Default Channel Group Documentation", icon: "fa-book", url: "https://support.google.com/analytics/answer/9756891?hl=en" },
+                { title: "Custom Channel Group Documentation", icon: "fa-book", url: "https://support.google.com/analytics/answer/13051316?hl=en" },
+                { title: "Attribution in GA4 Documentation", icon: "fa-book", url: "https://support.google.com/analytics/answer/10596866?hl=en" }
+            ]
+        },
+        
+        "view-ga4-deep-dive-events-user-properties-and-predictive-modeling": {
+            title: "GA4 Deep Dive: Events, User Properties, and Predictive Modeling",
+            duration: "18",
+            difficulty: "Intermediate",
+            updated: "July 2023",
+            tags: ["Analytics", "GA4", "Machine Learning", "Event Tracking"],
+            img: "https://images.unsplash.com/photo-1551288049-bbda38a5f9a5", // Professional analytics dashboard visual
+            excerpt: "Master the GA4 data model, explore Enhanced Measurement features, and leverage machine learning for predictive churn and revenue metrics.",
+            video: "https://www.loom.com/embed/b311e8b4848b4e8984fbccb5eca94219",
+            objectives: [
+                "Differentiate between User Parameters (User Properties) and the four main Event Categories in GA4.",
+                "Master Enhanced Measurement features to track scrolls, outbound clicks, and site searches without code changes.",
+                "Leverage GA4 machine learning for predictive metrics like churn rate and purchase probability.",
+                "Understand Identity Spaces and Reporting Identities (Blended vs. Observed) for cross-device tracking."
+            ],
+            notes: [
+                { 
+                    title: "1. The Data Model: User Properties vs. Events", 
+                    content: "<p><strong>User Parameters (User Properties):</strong> These are attributes defined at the user level, such as \"loyalty level,\" \"customer type,\" or \"registered user status.\" They describe groups of your user base.</p><p><em>Note: You must register these as User-Scoped Custom Dimensions in GA4 to see them in reports.</em></p><strong>Event Categories:</strong><ul><li><strong>Automatically Collected:</strong> Collected by default (e.g., first_visit, session_start).</li><li><strong>Enhanced Measurement:</strong> Automatically collected if enabled in the interface (e.g., scrolls, outbound clicks).</li><li><strong>E-commerce Events:</strong> Recommended events for tracking product data (e.g., purchase, add_to_cart).</li><li><strong>Custom Events:</strong> Manually configured events for specific tracking needs.</li></ul>" 
+                },
+                { 
+                    title: "2. Enhanced Measurement Events", 
+                    content: "<p>These events are toggled on/off in the \"Data Stream\" settings. You cannot add custom parameters to these directly.</p><ul><li><strong>Page views:</strong> Automatically enabled (cannot be disabled).</li><li><strong>Scrolls:</strong> Fires when a user scrolls 90% of the page depth (first time only).</li><li><strong>Outbound Clicks:</strong> Fires when a user clicks a link leading away from the current domain.</li><li><strong>Site Search:</strong> Fires view_search_results based on query parameters.</li><li><strong>Form Interactions:</strong> Captures form_start and form_submit.</li><li><strong>Video Engagement:</strong> Tracks plays, progress, and completion for embedded videos.</li><li><strong>File Downloads:</strong> Fires when a link with a file extension is clicked.</li></ul>" 
+                },
+                { 
+                    title: "3. Machine Learning & Cross-Device Tracking", 
+                    content: "<p><strong>Machine Learning Features:</strong></p><ul><li><strong>Predictive Metrics:</strong> Evaluates purchase probability, churn rate, and predictive revenue.</li><li><strong>Predictive Audiences:</strong> Creates \"smart audiences\" (e.g., \"Likely 7-day purchasers\").</li><li><strong>Behavioral Modeling:</strong> Uses Consent Mode to model behavior for non-consenting users.</li></ul><p><strong>Reporting Identities:</strong></p><ul><li><strong>Blended:</strong> Uses User ID, Google signals, Device ID, and Modeling (highest accuracy).</li><li><strong>Observed:</strong> Uses User ID, Google ID, and Device ID (No modeling).</li><li><strong>Device-Based:</strong> Uses Device ID only.</li></ul>" 
+                }
+            ],
+            quiz: [
+                { 
+                    q: "Which Enhanced Measurement event is triggered only when a user reaches the 90% vertical depth of a page?", 
+                    options: ["A) Page view", "B) Scrolls", "C) User engagement"], 
+                    correct: 1 
+                },
+                { 
+                    q: "What action is required to see Custom Parameters/User Properties in your GA4 standard reports?", 
+                    options: ["A) Enable Enhanced Measurement", "B) Register them as Custom Dimensions", "C) Link a BigQuery project"], 
+                    correct: 1 
+                },
+                { 
+                    q: "Which Reporting Identity utilizes User ID, Google Account ID, Device ID, and Modeling to identify users?", 
+                    options: ["A) Blended", "B) Observed", "C) Device-based"], 
+                    correct: 0 
+                }
+            ],
+            related: [
+                { title: "Configuring Audiences and Key Events", icon: "fa-play-circle", linkId: "view-configuring-audiences-key-events" }
+            ],
+            resources: [
+                { title: "Introduction to GA4", icon: "fa-external-link-alt", url: "https://infotrust.com/articles/intro-to-ga4/" },
+                { title: "Google Analytics Documentation", icon: "fa-book", url: "https://support.google.com/analytics" }
+            ]
+        },
 
-        function updateProgressBar() {
-            const bar = document.getElementById('progress-bar-fill');
-            const text = document.getElementById('progress-text');
-            if(text) text.innerText = `Question ${currentQuestionIndex + 1} of ${totalQuestions}`;
-            if(bar) bar.style.width = ((currentQuestionIndex + 1) / totalQuestions * 100) + '%';
-        }
+        "view-unlocking-campaign-insights-data-driven-attribution-in-ga4": {
+            title: "Unlocking Campaign Insights: Data-Driven Attribution in GA4",
+            duration: "20",
+            difficulty: "Intermediate",
+            updated: "July 2023",
+            tags: ["Analytics", "Attribution", "GA4", "Data-Driven"],
+            img: "https://images.unsplash.com/photo-1551288049-bebda4e38f71",
+            excerpt: "Learn how Data-Driven Attribution uses machine learning to assign credit across the customer journey and how it differs from traditional models.",
+            video: "https://www.loom.com/embed/80b234510c1f47f289f1dce03cda1d1a",
+            objectives: [
+                "The fundamentals of Data-Driven Attribution (DDA) and how it assigns credit compared to single-touch models like Last-Click.",
+                "How to navigate and utilize key GA4 reports including Conversion Paths, Model Comparison, and Path Analysis.",
+                "Critical differences between DDA in Google Analytics 4 versus Google Ads.",
+                "How to interpret data caveats (GDPR, cookie loss) and actionable strategies for over-indexed or under-indexed channels."
+            ],
+            notes: [
+                {
+                    title: "1. Introduction to DDA in GA4",
+                    content: "<p>Data-Driven Attribution (DDA) uses machine learning to measure the impact of every touchpoint in a customer's journey. Unlike \"Last-Click\" models which give 100% credit to the final step, DDA analyzes data from all touchpoints to show what actually drives conversions, leading to higher ROI and better budget allocation.</p>"
+                },
+                {
+                    title: "2. Key Reports for Attribution Analysis",
+                    content: "<p>Standard reports often don't use DDA directly. Users should look to the following areas for deeper insights:</p><ul><li><strong>Conversion Paths Report:</strong> To see the actual sequences of touchpoints.</li><li><strong>Model Comparison Report:</strong> To evaluate how different credit distributions impact your channel performance.</li><li><strong>Path Analysis:</strong> Found in the Explore section for custom funnel visualizations.</li></ul>"
+                },
+                {
+                    title: "3. GA4 vs. Google Ads DDA",
+                    content: "<p>While both use ML algorithms, there are distinct differences:</p><ul><li><strong>GA4:</strong> Covers all marketing channels (organic, social, referral, etc.) and supports cross-platform (App + Web) analysis.</li><li><strong>Google Ads:</strong> Platform-specific, focusing solely on paid search and display performance within the Google ecosystem.</li></ul>"
+                },
+                {
+                    title: "4. Data Caveats & Interpretation Strategy",
+                    content: "<p>Analysts must account for sampling, GDPR, and cookie loss. <strong>GA4 Consent Mode</strong> is highly recommended to fill data gaps. Strategically, \"Over-Indexed\" channels (receiving more credit in DDA than Last-Click) should consider budget increases, while \"Under-Indexed\" channels require effectiveness evaluations.</p>"
+                }
+            ],
+            quiz: [
+                {
+                    q: "Which of the following best describes how Data-Driven Attribution (DDA) differs from the Last-Click model?",
+                    options: [
+                        "DDA only counts the first interaction a user has with the brand",
+                        "DDA assigns 100% of the credit to the final touchpoint before conversion",
+                        "DDA uses machine learning to assign proportional credit to all touchpoints based on their contribution"
+                    ],
+                    correct: 2
+                },
+                {
+                    q: "Where within Google Analytics 4 would you find the 'Path Analysis' tool to create custom funnel visualizations?",
+                    options: [
+                        "Under the Admin settings tab",
+                        "Inside the Explore Report section",
+                        "Within the standard Real-time reports"
+                    ],
+                    correct: 1
+                },
+                {
+                    q: "If a specific channel is 'Over-Indexed' in a DDA model compared to a Last-Touch model, what does this signify?",
+                    options: [
+                        "The channel is performing worse than expected and budget should be cut",
+                        "The channel is contributing more to conversions than the Last-Touch model suggests",
+                        "The channel has a technical error and is not tracking correctly"
+                    ],
+                    correct: 1
+                }
+            ],
+            related: [
+                { title: "GA4 Interface Walkthrough", icon: "fa-play-circle", linkId: "view-ga4-interface-walkthrough-navigating-your-data" }
+            ],
+            resources: [
+                { title: "Attribution Impacts in GA4", icon: "fa-external-link-alt", url: "https://infotrust.com/articles/attribution-impacts-on-data-in-google-analytics-4/" },
+                { title: "GA4 Consent Mode Guide", icon: "fa-shield-alt", url: "https://support.google.com/analytics/answer/9976101" }
+            ]
+        },
+        
+        "view-configuring-audiences-key-events": {
+            title: "Configuring Audiences & Key Events in GA4",
+            duration: "11",
+            difficulty: "Intermediate",
+            updated: "Jan 2026",
+            tags: ["Analytics", "GA4", "Audiences", "Key Events"],
+            img: "https://images.unsplash.com/photo-1551288049-bbda48658aba", 
+            excerpt: "Learn to build high-value audience segments and configure Key Events to drive marketing ROI and track user conversions effectively in GA4.",
+            video: "https://www.loom.com/embed/9f914e38860a455aafcef8655386cd1a",
+            objectives: [
+                "The strategic benefits of audience segmentation for marketing ROI and personalized content.",
+                "Step-by-step instructions for creating custom, suggested, and predictive audiences in Google Analytics.",
+                "Deep dive into condition scoping: Across all sessions, within the same session, and within the same event.",
+                "How to configure 'Key Events' (formerly Conversion Events) to track revenue and user pathways."
+            ],
+            notes: [
+                {
+                    title: "1. The Strategic Value of Audiences",
+                    content: "<p>Defining target audiences allows for content that resonates with ideal customers. Benefits include:</p><ul><li><strong>Higher Engagement:</strong> Tailored content based on user behavior.</li><li><strong>Improved ROI:</strong> Reducing wasted ad spend by targeting relevant users.</li><li><strong>Data-driven Optimization:</strong> Better planning for future campaigns.</li></ul><p>The ultimate goal is to move from generic marketing to building deep customer relationships.</p>"
+                },
+                {
+                    title: "2. Creating Audiences in GA4",
+                    content: "<p>Navigate to <strong>Configure > Audiences > New Audience</strong>. Options include:</p><ul><li><strong>Custom Audiences:</strong> Built from scratch using Dimensions, Metrics, or Events.</li><li><strong>Suggested/Templates:</strong> Pre-defined by GA4 based on demographics or technology.</li><li><strong>Predictive:</strong> Based on modeling (requires specific data thresholds).</li></ul><p>Always use descriptive naming conventions and logical AND/OR operators.</p>"
+                },
+                {
+                    title: "3. Condition Scoping & Logic",
+                    content: "<p>Scoping defines how user behavior is evaluated:</p><ul><li><strong>Across all sessions:</strong> Criteria met at any point in the user's history.</li><li><strong>Within the same session:</strong> Criteria must be met in a single visit.</li><li><strong>Within the same event:</strong> Criteria must be met within a single specific action.</li></ul>"
+                },
+                {
+                    title: "4. Practical Use Case: Recent Purchasers",
+                    content: "<p>To create a 'Purchasers - Last 30 Days' audience:</p><ol><li>Set Condition 1 to <strong>Event = purchase</strong> AND <strong>Event Count >= 1</strong>.</li><li>Set Condition 2 to <strong>Dimension = first_purchase_date</strong> within the specific timeframe.</li></ol><p>Use these audiences for retargeting or excluding existing customers from acquisition ads.</p>"
+                },
+                {
+                    title: "5. Transitioning to Key Events",
+                    content: "<p>Previously called 'Conversion Events,' <strong>Key Events</strong> allow you to track desired actions (e.g., <code>purchase_completed</code>). Set these up under <strong>Configure > Events</strong>, name them, define trigger conditions (like reaching a Thank You page), and assign monetary values for ROI tracking.</p>"
+                }
+            ],
+            quiz: [
+                {
+                    q: "Which scoping option includes a user based on criteria met throughout their entire history of visits?",
+                    options: ["Within the same event", "Within the same session", "Across all sessions"],
+                    correct: 2
+                },
+                {
+                    q: "In the 'Recent Purchasers' example, which operator ensures a user meets both the event count AND the date requirement?",
+                    options: ["AND", "OR", "IF"],
+                    correct: 0
+                },
+                {
+                    q: "Where do you navigate in GA4 to begin the audience creation process?",
+                    options: ["Admin > Property Settings", "Configure > Audiences", "Reports > Monetization"],
+                    correct: 1
+                }
+            ],
+            related: [
+                { title: "Unlocking User Insights", icon: "fa-play-circle", linkId: "view-unlocking-user-insights-introduction-to-ga4-audiences" }
+            ],
+            resources: [
+                { title: "GA4 Audience Documentation", icon: "fa-book", url: "https://support.google.com/analytics/answer/9267572?hl=en" },
+                { title: "Key Events Guide", icon: "fa-external-link-alt", url: "https://support.google.com/analytics/answer/12844695?hl=en" }
+            ]
+        },
+        
+        "view-unlocking-user-insights-introduction-to-ga4-audiences": {
+            title: "Unlocking User Insights: Introduction to GA4 Audiences",
+            duration: "4",
+            difficulty: "Beginner",
+            updated: "Sep 2023",
+            tags: ["Analytics", "GA4", "Audiences"],
+            img: "https://images.unsplash.com/photo-1551288049-bbda48658a7e?auto=format&fit=crop&q=80&w=800",
+            excerpt: "Learn the fundamentals of GA4 audiences, how they are defined by user behavior, and how to leverage them for remarketing and personalization.",
+            video: "https://www.loom.com/embed/f619a619d2144a5eab3c0fe1e5da2ad4",
+            objectives: [
+                "The fundamental definition of an Audience within the Google Analytics 4 (GA4) ecosystem.",
+                "How specific user behaviors, events, and criteria form the basis of audience creation.",
+                "The strategic benefits of using audiences, including remarketing and personalization.",
+                "How leveraging audiences can improve overall user experience and conversion rates."
+            ],
+            notes: [
+                {
+                    title: "1. Defining the GA4 Audience",
+                    content: "<p><strong>General Definition:</strong> In broad terms, an audience is a group of people sharing common characteristics, interests, or preferences.</p><p><strong>The GA4 Definition:</strong> On a Google Analytics 4 scale, audiences are much more specific. They are used to identify and group users who exhibit specific behaviors or meet precise criteria on your platform.</p><p><strong>Basis of Creation:</strong> These groups are built based on user interactions with your website or app, including pages viewed, specific actions taken, and events triggered.</p>"
+                },
+                {
+                    title: "2. Why Use Audiences?",
+                    content: "<ul><li><strong>Valuable Insights:</strong> They provide a window into user behavior, allowing you to understand the specific interests and preferences of your visitors.</li><li><strong>Tailored Marketing:</strong> By understanding these segments, you can customize your marketing efforts to better suit the user, improving their overall experience.</li><li><strong>Remarketing Campaigns:</strong> This is a key feature. You can target users who have already interacted with your app or site (and are therefore 'warm' leads) to encourage them to convert.</li><li><strong>Performance:</strong> Ultimately, building and utilizing audiences leads to improved engagement and increased conversions.</li></ul>"
+                }
+            ],
+            quiz: [
+                {
+                    q: "In the context of GA4, what primarily defines an 'Audience'?",
+                    options: [
+                        "A list of all users who have visited the site in the last year",
+                        "A group of users identified by specific behaviors, criteria, or interactions",
+                        "A random selection of users for A/B testing"
+                    ],
+                    correct: 1
+                },
+                {
+                    q: "Which of the following is a key benefit of using Audiences mentioned in the training?",
+                    options: [
+                        "Reducing the amount of data stored in BigQuery",
+                        "Remarketing to users who are likely to convert",
+                        "Automatically generating new website content"
+                    ],
+                    correct: 1
+                },
+                {
+                    q: "Audiences in GA4 are created based on interactions such as:",
+                    options: [
+                        "Pages viewed and events triggered",
+                        "The user's credit card number",
+                        "The user's private passwords"
+                    ],
+                    correct: 0
+                }
+            ],
+            related: [
+                { title: "Configuring Audiences", icon: "fa-play-circle", linkId: "view-configuring-audiences-key-events" }
+            ],
+            resources: [
+                { title: "Google Documentation on Audiences", icon: "fa-book", url: "https://support.google.com/analytics/answer/9267572#zippy=%2Cin-this-article" },
+                { title: "Overview of Audiences in GA4", icon: "fa-external-link-alt", url: "https://infotrust.com/articles/overview-of-audiences-in-google-analytics-4/" }
+            ]
+        },
 
-        function showResults() {
-            document.getElementById('quiz-progress').style.display = 'none';
-            document.getElementById('quiz-results').classList.add('active');
-            document.getElementById('final-score').innerText = currentScore;
-            
-            // Render Review
-            const container = document.getElementById('quiz-review-container');
-            container.innerHTML = '';
-            
-            quizHistory.forEach((h, i) => {
-                const icon = h.correct ? '<i class="fa-solid fa-check"></i>' : '<i class="fa-solid fa-xmark"></i>';
-                const cls = h.correct ? '' : 'wrong';
-                const correctText = h.correct ? '' : `<div style="font-size:12px; color:#555; margin-top:4px;">Correct: ${h.correctAns}</div>`;
-                
-                container.innerHTML += `
-                    <div class="review-item">
-                        <div class="review-q">${i+1}. ${h.q}</div>
-                        <div class="review-a ${cls}">${icon} Your Answer: ${h.userAns}</div>
-                        ${correctText}
+        "view-intro-to-ga": {
+            title: "An Introduction to Google Analytics",
+            duration: "6",
+            difficulty: "Beginner",
+            updated: "Dec 2024",
+            tags: ["Google Analytics", "Basics"],
+            img: "https://images.unsplash.com/photo-1555421689-d68471e189f2?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+            excerpt: "Understand the core functions of GA4, predictive analytics, and how it unifies web and app data.",
+            video: "https://www.loom.com/embed/1389e74374574dc2bae44a5244b0c09c",
+            objectives: [
+                "Understand the core functions of Google Analytics 4 (GA4).",
+                "Explore how GA4 unifies data between web and mobile apps.",
+                "Discover the power of predictive analytics and machine learning.",
+                "Learn about GA4's enhanced privacy controls."
+            ],
+            notes: [
+                { title: "1. The Shift to User-Centric Analytics", content: "<p>GA4 represents a move away from the platform-specific tracking of the past. Unlike Universal Analytics (UA), GA4 utilizes a user-centric approach, tracking events across both web and app properties in a single location.</p>" },
+                { title: "2. Dashboards & Visualization", content: "<p>GA4 offers customizable dashboards that allow users to prioritize vital business data.</p>" },
+                { title: "3. Predictive Analytics", content: "<p>GA4 leverages statistical algorithms to analyze historical data and forecast future outcomes, such as customer behavior and business trends.</p>" },
+                { title: "4. Privacy & Compliance", content: "<p>Built for the modern regulatory ecosystem, GA4 includes granular controls like Consent Mode and IP Anonymization.</p>" }
+            ],
+            quiz: [
+                { q: "What is a primary advantage of GA4 compared to UA?", options: ["It separates web and app data.", "It unifies web and app data.", "It removes event tracking."], correct: 1 },
+                { q: "How does GA4 utilize predictive analytics?", options: ["Machine learning to forecast future events.", "Manually predicting sales.", "Predicts employee usage."], correct: 0 },
+                { q: "Which privacy feature is in GA4?", options: ["Automatic email broadcasting.", "IP Anonymization and Consent Mode.", "Unlimited retention."], correct: 1 }
+            ],
+            related: [
+                { title: "Account Architecture", icon: "fa-play-circle", linkId: "view-account-architecture" }
+            ],
+            resources: [
+                { title: "Google Developer Docs", icon: "fa-book", url: "https://developers.google.com/analytics/devguides/collection/ga4" },
+                { title: "GA4 Help Center", icon: "fa-arrow-up-right-from-square", url: "https://support.google.com/analytics/answer/10089681" }
+            ]
+        },
+
+        "view-explore-reports": {
+            title: "Navigating GA4 Explore Reports: From Blank Canvas to Insights",
+            duration: "27",
+            difficulty: "Intermediate",
+            updated: "Dec 2025",
+            tags: ["Explore Reports", "Analysis", "Regex"],
+            img: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+            excerpt: "Navigate the Explore interface to create, manage, and share custom reports using visualization techniques like Funnels.",
+            video: "https://www.loom.com/embed/4ad528dbb4554b3e87638cb9466549a0",
+            objectives: [
+                "Navigate the Explore interface to create, manage, and share custom reports.",
+                "Configure the report 'Palette' by selecting and applying specific Segments, Dimensions, and Metrics.",
+                "Utilize various visualization techniques (Cohort, Funnel, Path Exploration).",
+                "Interpret data quality indicators regarding Data Sampling and Thresholding."
+            ],
+            notes: [
+                { title: "1. Interface Overview & Report Management", content: "<p>To access Explore Reports, click 'Explore' on the left-hand navigation in Google Analytics 4. You can start with a Blank Report or use the Template Gallery (e.g., Free Form, Funnel Exploration, Path Exploration).</p><ul><li><strong>Management Features:</strong> Rename, duplicate, delete, or share reports (permissions permitting).</li><li><strong>Cross-Property Copying:</strong> Use the 'copy across properties' feature to standardize reports across multiple client properties.</li><li><strong>The Palette Concept:</strong> Think of the 'Variables' column as a painter's palette. You must select ingredients (Dimensions, Metrics, Segments) to add them to your palette before you can 'paint' them onto the canvas.</li></ul>" },
+                { title: "2. Building the Report (Dimensions & Metrics)", content: "<p><strong>Dimensions:</strong> Attributes of your data (e.g., Channel Group, Source/Medium). Remember that traffic dimensions often have different scopes (User-scoped vs. Session-scoped).</p><p><strong>Metrics:</strong> Quantitative measurements (e.g., Sessions, Active Users).</p><p><strong>Adding to Canvas:</strong> Double-click or drag items from the Variables column into the 'Settings' column (Rows, Columns, or Values).</p><ul><li><strong>Rows:</strong> Default is 10; adjustable up to 500.</li><li><strong>Sorting:</strong> Click headers to toggle ascending/descending.</li><li><strong>Cell Type:</strong> Switch to Heat Map for better visualization of high/low values.</li></ul>" },
+                { title: "3. Visualization Techniques", content: "<p>GA4 offers multiple techniques to visualize data. Switching techniques changes the report structure:</p><ul><li><strong>Free Form:</strong> The standard table or chart view (Bar, Line, Scatterplot, Geo Map).</li><li><strong>Cohort Exploration:</strong> Shows how user behavior persists or drops off over time.</li><li><strong>Funnel Exploration:</strong> Visualizes steps users take in a specific journey.</li><li><strong>Path Exploration:</strong> Shows how users proceed through the site starting from a specific event or page.</li><li><strong>User Lifetime:</strong> Analyzes user behavior over their entire lifetime as a customer.</li></ul>" }
+            ],
+            warningPanel: [
+                { type: "Sampling", cause: "Dataset is too large (e.g., broad date range).", solution: "Request an unsampled report (360) or narrow date range." },
+                { type: "Thresholding", cause: "Data is too granular or low-volume (privacy).", solution: "Broaden date range or remove granular dimensions." }
+            ],
+            quiz: [
+                { q: "When building a report, what logic is applied when you add multiple filters to a single view?", options: ["OR logic", "AND logic", "EXCLUDE logic"], correct: 1 },
+                { q: "You see an orange triangle indicator mentioning 'Thresholding.' What does this indicate?", options: ["The data set is too large.", "The data volume is low (privacy protection).", "The data is corrupt."], correct: 1 },
+                { q: "Which visualization technique is best for seeing how segments interact over time and drop off?", options: ["Cohort Exploration", "Geo Map", "Scatterplot"], correct: 0 }
+            ],
+            related: [
+                { title: "Intro to GA4", icon: "fa-play-circle", linkId: "view-intro-to-ga" }
+            ],
+            resources: [
+                { title: "Get started with Explorations", icon: "fa-arrow-up-right-from-square", url: "https://support.google.com/analytics/answer/7579450" },
+                { title: "Advanced Analysis Guide", icon: "fa-book", url: "https://infotrust.com/articles/advanced-data-analysis-google-analytics-4-exploration-reports/" }
+            ]
+        },
+
+        "view-account-architecture": {
+            title: "Decoding GA4: Account Architecture & Hierarchy",
+            duration: "11",
+            difficulty: "Beginner",
+            updated: "Dec 2024",
+            tags: ["Google Analytics", "Architecture", "Strategy"],
+            img: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+            excerpt: "Learn the structural differences between Universal Analytics and GA4, and how Data Streams unify your data.",
+            video: "https://www.loom.com/embed/996a9eadafcc47b8b9dac5f614d90452",
+            objectives: [
+                "The structural differences between the Universal Analytics (UA) hierarchy and the new GA4 framework.",
+                "How Data Streams allow for blending web and app data sources under a single Property.",
+                "The role of Sub-properties in GA4 360 as a replacement for UA Views.",
+                "The business implications of the new architecture regarding ROI and costs."
+            ],
+            notes: [
+                { title: "1. The Account Structure", content: "<p><strong>Hierarchy Changes:</strong> While the 'Account' level remains similar, Properties and Views have changed drastically.</p><p><strong>Data Streams:</strong> Instead of distinct Views, GA4 uses Data Streams. These are sources (Websites or Apps) that feed into a single Property.</p><p><strong>Blending Data:</strong> A major advantage of GA4 is the ability to blend streams. For example, a website stream and an iOS app stream can feed into the same Property, unifying the user journey.</p><p><strong>Sub-properties:</strong> This is the GA4 replacement for UA Views (GA4 360 feature only). They function as subsets of the main property (e.g., filtering for US-only traffic).</p>" },
+                { title: "2. Business Impact & ROI", content: "<p><strong>Cross-Device Reporting:</strong> Because GA4 unifies web and app streams, businesses get a comprehensive view of the customer journey across devices.</p><p><strong>Unified Metrics:</strong> Unlike UA, which required separate views for web and app, GA4 reports on them together natively.</p><p><strong>Cost Implications:</strong> Creating Sub-properties costs money in GA4 360. A clean architecture is now tied directly to cost efficiency. Poor structure can lead to inflated costs for redundant data processing.</p>" }
+            ],
+            quiz: [
+                { q: "In GA4, which element allows you to combine data from a website and a mobile app into a single Property?", options: ["Sub-properties", "Data Streams", "Views"], correct: 1 },
+                { q: "Which is a limitation of Sub-properties in GA4 compared to Views in Universal Analytics?", options: ["They cannot filter data by country.", "They are only available for GA4 360 users and have cost implications.", "They can only track mobile app data."], correct: 1 },
+                { q: "How does GA4 improve reporting compared to Universal Analytics regarding cross-device tracking?", options: ["It forces users to create separate properties for every device.", "It eliminates the need for tracking codes.", "It unifies web and app reporting metrics in a single view rather than separating them."], correct: 2 }
+            ],
+            related: [
+                { title: "Intro to Google Analytics", icon: "fa-play-circle", linkId: "view-intro-to-ga" }
+            ],
+            resources: [
+                { title: "Download Cheat Sheet (PDF)", icon: "fa-file-pdf", url: "https://drive.google.com/file/d/1rYRfBtQF_3V6fbN6emqQoz-7HK8kzJS3/view?usp=sharing" },
+                { title: "Account Architecture Docs", icon: "fa-arrow-up-right-from-square", url: "https://support.google.com/analytics/answer/9679158?hl=en" }
+            ]
+        },
+
+        "view-the-basics-of-privacy-in-google-analytics": {
+            title: "The Basics of Privacy in Google Analytics",
+            duration: "12",
+            difficulty: "Beginner",
+            updated: "Dec 2024",
+            tags: ["Google Analytics", "Privacy", "GDRP","CCPA"],
+            img: "https://images.unsplash.com/photo-1563986768609-322da13575f3",
+            excerpt: "Master the core principles of GDPR/CCPA and learn how to configure GA4 settings like Google Signals and Consent Mode for total compliance.",
+            video: "https://www.loom.com/embed/8359d6acdc264346857eb9d9bc1e35eb",
+            objectives: [
+                "Understand the core principles of GDPR and CCPA and how they impact data collection.",
+                "Learn to manage critical privacy settings including Google Signals, Data Retention, and IP Anonymization.",
+                "Explore technical implementations like Consent Mode, Data Deletion requests, and reporting Thresholds.",
+                "Master best practices for user opt-out management and building brand authority through data ethics."
+            ],
+            notes: [
+                {
+                    title: "1. The Importance of Data Privacy & Key Regulations",
+                    content: "<p>Data privacy protects individual information, maintains trust, and ensures regulatory compliance.</p><ul><li><strong>GDPR (General Data Protection Regulation):</strong> EU-based regulation (May 2018) governing personal data processing globally for EU citizens.</li><li><strong>CCPA (California Consumer Privacy Act):</strong> California-based regulation (January 2020) granting specific rights to residents regarding their collected data.</li></ul><p><strong>Goal:</strong> To hold companies accountable and provide users with total control over their digital footprint.</p>"
+                },
+                {
+                    title: "2. GA4 Compliance Settings (Signals, Retention, IP)",
+                    content: "<ul><li><strong>Google Signals:</strong> Supports cross-device reporting. Can be disabled or customized by country to enhance privacy.</li><li><strong>Data Retention:</strong> Controls how long unaggregated data (used in Explorations) is stored. Options range from 2 to 14 months (up to 50 for 360). This does not impact standard aggregated reports.</li><li><strong>IP Anonymization:</strong> In GA4, this is enabled by default and cannot be modified. GA4 does not log or store individual IP addresses.</li></ul>"
+                },
+                {
+                    title: "3. Advanced Features: Consent Mode, Deletion & Thresholding",
+                    content: "<ul><li><strong>Consent Mode:</strong> Adjusts tag behavior based on user cookie preferences. If consent is denied, \"pings\" are sent without cookies to allow for machine-learning-based data modeling.</li><li><strong>Data Deletion:</strong> Requests allow the removal of specific events or user properties from servers, typically processed within 7 to 63 days.</li><li><strong>Data Thresholding:</strong> A system-applied limit to prevent the identification of individual users when Google Signals is active and user counts are low (indicated by an orange triangle icon).</li></ul>"
+                },
+                {
+                    title: "4. Building Trust & Best Practices",
+                    content: "<ul><li><strong>Transparency:</strong> Maintain clear and detailed privacy policies.</li><li><strong>User Control:</strong> Provide immediate and easy-to-use opt-out options.</li><li><strong>Rights Fulfillment:</strong> Ensure users can access or delete their data efficiently upon request.</li></ul>"
+                }
+            ],
+            quiz: [
+                {
+                    q: "Which of the following statements about IP Anonymization in GA4 is true?",
+                    options: [
+                        "It must be manually enabled in settings",
+                        "It is enabled by default and cannot be turned off",
+                        "It only applies to users in the EU"
+                    ],
+                    correct: 1
+                },
+                {
+                    q: "How does the \"Data Retention\" setting in GA4 affect your reports?",
+                    options: [
+                        "It deletes data from Standard Reports after 2 months",
+                        "It determines how long unaggregated data in Explorations is stored",
+                        "It limits historical data in all standard views"
+                    ],
+                    correct: 1
+                },
+                {
+                    q: "When Consent Mode is active and a user denies consent, how does GA4 track activity?",
+                    options: [
+                        "It continues to set cookies but masks the ID",
+                        "It stops tracking the user entirely",
+                        "It sends cookie-less \"pings\" to notify that events occurred"
+                    ],
+                    correct: 2
+                }
+            ],
+            related: [
+                { title: "Intro to GA4", icon: "fa-play-circle", linkId: "view-intro-to-ga" }
+            ],
+            resources: [
+                { title: "Privacy controls in google analytics", icon: "fa-book", url: "https://support.google.com/analytics/answer/9019185?hl=en#zippy=%2Cin-this-article" },
+                { title: "Best Practices for Data Compliance", icon: "fa-external-link-alt", url: "https://infotrust.com/articles/best-practices-for-data-collection-and-privacy-compliance/" }
+            ]
+        },
+
+        "view-ga4-interface-walkthrough-navigating-your-data": {
+            title: "GA4 Interface Walkthrough: Navigating Your Data",
+            duration: "29",
+            difficulty: "Beginner",
+            updated: "Dec 2024",
+            tags: ["Analytics", "GA4", "Interface"],
+            img: "https://images.unsplash.com/photo-1551288049-bbda38a5f971?q=80&w=2070&auto=format&fit=crop",
+            excerpt: "Learn how to navigate the GA4 workspaces, use intelligent search for AI insights, and distinguish between standard reports and custom explorations.",
+            video: "https://www.loom.com/embed/6530f571373848e0959f7d112f6e72e3",
+            objectives: [
+                "How to navigate the primary workspaces: Home, Reports, Explore, Advertising, and Admin.",
+                "Using the intelligent Search bar to find reports and ask business questions using AI.",
+                "Understanding the difference between standard reports (Acquisition, Engagement, Monetization) and custom Explorations.",
+                "How to configure data settings, including marking events as conversions and registering custom dimensions."
+            ],
+            notes: [
+                {
+                    title: "1. Home Page & Intelligent Search",
+                    content: "<ul><li><strong>Overview:</strong> Provides a high-level summary of users, event counts, and conversions from the last 7 days.</li><li><strong>Features:</strong> Includes \"Recently Accessed\" reports and AI-driven \"Suggested for You\" recommendations.</li><li><strong>Search Bar:</strong> A powerful tool for finding direct report paths or asking natural language questions (e.g., \"What are my most popular pages?\") for instant insights.</li></ul>"
+                },
+                {
+                    title: "2. Standard Reports (Acquisition & Engagement)",
+                    content: "<p><strong>Real-time Report:</strong> Monitor activity from the last 30 minutes.</p><ul><li><strong>Acquisition:</strong> Focuses on how users arrive, distinguishing between User Acquisition (first-time users) and Traffic Acquisition (session-based).</li><li><strong>Engagement:</strong> Tracks Events (all user actions), Conversions (key business actions), and Pages and Screens.</li><li><strong>Functionality:</strong> Users can modify reports by changing primary dimensions via dropdowns or adding secondary dimensions using the \"+\" icon.</li></ul>"
+                },
+                {
+                    title: "3. Monetization, User Data, & Advertising",
+                    content: "<ul><li><strong>Monetization:</strong> Contains e-commerce purchase data and funnel views of the shopping journey.</li><li><strong>User Reports:</strong> Provides demographic data (requires Google Signals) and technical details like device and browser types.</li><li><strong>Advertising Workspace:</strong> Used for Model Comparison (e.g., Last Click vs. First Click) and viewing Conversion Paths to understand the user journey.</li></ul>"
+                },
+                {
+                    title: "4. Explore & Admin Configuration",
+                    content: "<ul><li><strong>Explore:</strong> Deep-dive custom reporting using \"Free Form\" tables or \"Funnel Explorations.\"</li><li><strong>Admin:</strong> The control center for managing Data Streams, toggling events as Conversions, and registering Custom Definitions.</li><li><strong>Configuration:</strong> Must register event parameters as Custom Dimensions/Metrics to see them in reports; use DebugView for real-time testing.</li></ul>"
+                }
+            ],
+            quiz: [
+                {
+                    q: "Which feature allows you to ask natural language questions like \"What are my most popular pages?\" to get instant insights?",
+                    options: ["The Explore Section", "The Search Bar", "The DebugView"],
+                    correct: 1
+                },
+                {
+                    q: "If you have a specific event parameter collecting data, but it is not appearing in your reports, what step might you have missed?",
+                    options: ["Creating a Funnel Exploration", "Enabling Google Signals", "Registering it in Custom Definitions"],
+                    correct: 2
+                },
+                {
+                    q: "Which report section should you use to compare how different attribution models impact your revenue data?",
+                    options: ["Advertising", "Engagement", "Real-time"],
+                    correct: 0
+                }
+            ],
+            related: [
+                { title: "Intro to GA4", icon: "fa-play-circle", linkId: "view-intro-to-ga" }
+            ],
+            resources: [
+                { title: "GA Property set up guide", icon: "fa-book", url: "https://support.google.com/analytics/answer/9304153" },
+                { title: "Setting up GA4: Beginners Guide", icon: "fa-external-link-alt", url: "https://infotrust.com/articles/google-analytics-4-guide-for-beginners/" }
+            ]
+        },
+        //Add more courses here
+    };
+
+    // =========================================================
+    // 2. LOGIC: RENDER & ROUTING
+    // =========================================================
+    
+    let currentCourseId = null;
+
+    // Load Specific Lesson Data into Template
+    function loadLesson(id) {
+        const data = courseData[id];
+        if (!data) return;
+        currentCourseId = id;
+
+        // 1. Header Info
+        document.getElementById('lesson-title').innerText = data.title;
+        document.getElementById('lesson-difficulty').innerHTML = `<i class="fa-solid fa-signal"></i> ${data.difficulty}`;
+        document.getElementById('lesson-duration').innerHTML = `<i class="fa-regular fa-clock"></i> ${data.duration} Min`;
+        document.getElementById('lesson-updated').innerHTML = `<i class="fa-regular fa-calendar"></i> ${data.updated}`;
+
+        // 2. Video & Objectives
+        document.getElementById('lesson-video').src = data.video;
+        document.getElementById('lesson-objectives').innerHTML = data.objectives.map(o => `<li>${o}</li>`).join('');
+
+        // 3. Notes (Accordions)
+        const notesContainer = document.getElementById('lesson-notes');
+        notesContainer.innerHTML = '';
+        data.notes.forEach((note, index) => {
+            notesContainer.innerHTML += `
+                <div class="accordion-item">
+                    <div class="accordion-header" onclick="window.toggleAccordion(this)">
+                        ${note.title} <i class="fa-solid fa-chevron-down accordion-icon"></i>
                     </div>
-                `;
-            });
+                    <div class="accordion-content"><div class="accordion-body">${note.content}</div></div>
+                </div>
+            `;
+        });
 
-            // Celebration
-            if (currentScore === totalQuestions) {
-                if (typeof confetti === 'function') {
-                    const rect = document.getElementById('quiz-section').getBoundingClientRect();
-                    const x = (rect.left + rect.width/2) / window.innerWidth;
-                    confetti({ particleCount: 150, spread: 70, origin: { x: x, y: 0.6 }, colors: ['#084A87', '#E67E22', '#2ECC71'] });
-                }
-                setTimeout(() => {
-                    document.getElementById('certificate-modal').style.setProperty('display', 'flex', 'important');
-                }, 800);
-            }
+        // 4. Warning Panel (Optional)
+        const warnPanel = document.getElementById('lesson-warning-panel');
+        if (data.warningPanel) {
+            warnPanel.classList.remove('it-hidden');
+            document.getElementById('warning-table-body').innerHTML = data.warningPanel.map(w => 
+                `<tr><td>${w.type}</td><td>${w.cause}</td><td>${w.solution}</td></tr>`
+            ).join('');
+        } else {
+            warnPanel.classList.add('it-hidden');
+        }
+
+        // 5. Sidebar Tags
+        document.getElementById('lesson-tags').innerHTML = data.tags.map(t => `<span class="tool-tag">${t}</span>`).join('');
+
+        // 6. Sidebar Related & Resources - FIXED: Manual display handling
+        const relatedList = document.getElementById('lesson-related');
+        const cardRelated = document.getElementById('card-related');
+        if (data.related && data.related.length > 0) {
+            cardRelated.style.display = 'block';
+            relatedList.innerHTML = data.related.map(r => 
+                `<li><a onclick="openTraining('${r.linkId}')" style="cursor:pointer"><i class="fa-solid ${r.icon}"></i> ${r.title}</a></li>`
+            ).join('');
+        } else {
+            cardRelated.style.display = 'none';
+        }
+
+        const resourcesList = document.getElementById('lesson-resources');
+        const cardResources = document.getElementById('card-resources');
+        if (data.resources && data.resources.length > 0) {
+            cardResources.style.display = 'block';
+            resourcesList.innerHTML = data.resources.map(r => 
+                `<li><a href="${r.url}" target="_blank"><i class="fa-solid ${r.icon}"></i> ${r.title}</a></li>`
+            ).join('');
+        } else {
+            cardResources.style.display = 'none';
         }
         
-        // --- LOCAL ACCORDION (Renamed to prevent conflict with global FAQ) ---
-        window.toggleLocalAccordion = function(header) {
-            header.classList.toggle('active');
-            var content = header.nextElementSibling;
-            if (content.style.maxHeight) {
-                content.style.maxHeight = null;
-                content.classList.remove('open');
-            } else {
-                content.classList.add('open');
-                content.style.maxHeight = content.scrollHeight + "px";
-            }
-        };
+        // 7. Reset Quiz & Feedback
+        resetQuizUI();
+        document.getElementById('feedbackForm').reset();
+        document.getElementById('feedbackForm').style.display = 'block';
+        document.getElementById('feedbackMessage').style.display = 'none';
+
+        // 8. Show Template
+        document.getElementById('view-landing').classList.add('it-hidden');
+        document.getElementById('view-lesson-template').classList.remove('it-hidden');
         
-        window.closeCert = function() {
-            document.getElementById('certificate-modal').style.setProperty('display', 'none', 'important');
-        };
+        // 9. Nav & Scroll
+        document.getElementById('landing-nav').classList.add('it-hidden');
+        document.getElementById('lesson-nav').classList.remove('it-hidden');
+        setTimeout(() => window.scrollTo(0,0), 10);
+    }
 
+    // Main Switcher
+    window.openTraining = function(viewId) {
+        if (viewId === 'view-landing') {
+            history.pushState("", document.title, window.location.pathname + window.location.search);
+            document.getElementById('view-lesson-template').classList.add('it-hidden');
+            document.getElementById('view-landing').classList.remove('it-hidden');
+            document.getElementById('landing-nav').classList.remove('it-hidden');
+            document.getElementById('lesson-nav').classList.add('it-hidden');
+            setTimeout(() => window.scrollTo(0,0), 10);
+        } else {
+            // Check if valid course
+            if (courseData[viewId]) {
+                window.location.hash = viewId;
+                loadLesson(viewId);
+            }
+        }
+    };
 
+    // Polling for Hash
+    var pollCount = 0;
+    var hashCheck = setInterval(function() {
+        pollCount++;
+        if (window.location.hash) {
+            var targetId = window.location.hash.substring(1);
+            if (courseData[targetId]) {
+                loadLesson(targetId);
+            }
+        } else {
+             // Only force landing if no hash on first check
+             if (pollCount === 1) {
+                 document.getElementById('view-landing').classList.remove('it-hidden');
+             }
+        }
+        if (pollCount > 20) clearInterval(hashCheck);
+    }, 100);
+
+    // =========================================================
+    // 3. QUIZ ENGINE (DYNAMIC)
+    // =========================================================
+    let quizHistory = [];
+    let currentScore = 0;
+
+    function resetQuizUI() {
+        const data = courseData[currentCourseId];
+        // SAFETY: Only show quiz if data exists
+        const quizSection = document.getElementById('quiz-section');
+        if(!data || !data.quiz || data.quiz.length === 0) {
+            quizSection.style.display = 'none';
+            return;
+        }
+        quizSection.style.display = 'flex'; // Manual visible override
+
+        const container = document.getElementById('dynamic-quiz-content');
+        container.innerHTML = '';
+        
+        // Generate Questions HTML
+        data.quiz.forEach((q, idx) => {
+            let optionsHTML = '';
+            q.options.forEach((opt, optIdx) => {
+                const isCorrect = (optIdx === q.correct);
+                optionsHTML += `<button class="quiz-option-btn" onclick="checkAnswer(this, ${isCorrect}, ${idx})">${opt}</button>`;
+            });
+
+            container.innerHTML += `
+                <div id="q-${idx}" class="quiz-step">
+                    <div class="quiz-question-text"><span>${idx + 1}.</span> <span>${q.q}</span></div>
+                    <div class="quiz-options">${optionsHTML}</div>
+                    <div class="quiz-feedback" id="feedback-${idx}"></div>
+                </div>
+            `;
+        });
+
+        // Reset Steps
+        document.getElementById('quiz-intro').classList.add('active');
+        document.getElementById('quiz-results').classList.remove('active');
+        document.getElementById('quiz-progress').style.display = 'none';
+    }
+
+    window.startQuiz = function() {
+        document.getElementById('quiz-intro').classList.remove('active');
+        const firstQ = document.getElementById('q-0');
+        if(firstQ) firstQ.classList.add('active');
+        
+        currentScore = 0;
+        quizHistory = [];
+        updateQuizProgress(0);
+    };
+
+    function updateQuizProgress(currentIdx) {
+        const total = courseData[currentCourseId].quiz.length;
+        const bar = document.getElementById('progress-bar-fill');
+        const text = document.getElementById('progress-text');
+        
+        document.getElementById('quiz-progress').style.display = 'flex';
+        text.innerText = `Question ${currentIdx + 1} of ${total}`;
+        bar.style.width = ((currentIdx + 1) / total * 100) + '%';
+    }
+
+    window.checkAnswer = function(btn, isCorrect, qIdx) {
+        const data = courseData[currentCourseId];
+        const parent = document.getElementById(`q-${qIdx}`);
+        const feedback = document.getElementById(`feedback-${qIdx}`);
+        const btns = parent.querySelectorAll('.quiz-option-btn');
+
+        // Visuals
+        if(isCorrect) {
+            btn.classList.add('correct');
+            feedback.innerHTML = '<span style="color:#2ECC71"><i class="fa-solid fa-check"></i> Correct!</span>';
+            currentScore++;
+        } else {
+            btn.classList.add('incorrect');
+            feedback.innerHTML = '<span style="color:#E74C3C"><i class="fa-solid fa-xmark"></i> Incorrect.</span>';
+        }
+
+        // Lock buttons
+        btns.forEach(b => {
+            b.disabled = true;
+            if(b.onclick.toString().includes('true')) b.classList.add('correct');
+            if(!b.classList.contains('correct') && !b.classList.contains('incorrect')) {
+                 b.style.opacity = "0.5"; b.style.filter = "grayscale(1)";
+            }
+        });
+
+        // Save history
+        quizHistory.push({
+            q: data.quiz[qIdx].q,
+            userAns: btn.innerText,
+            correct: isCorrect,
+            correctAns: data.quiz[qIdx].options[data.quiz[qIdx].correct]
+        });
+
+        // Next Step
+        setTimeout(() => {
+            parent.classList.remove('active');
+            const nextIdx = qIdx + 1;
+            
+            if(nextIdx < data.quiz.length) {
+                // Show next question
+                document.getElementById(`q-${nextIdx}`).classList.add('active');
+                updateQuizProgress(nextIdx);
+            } else {
+                // Show results
+                showResults();
+            }
+        }, 1500);
+    };
+
+    function showResults() {
+        const resultsEl = document.getElementById('quiz-results');
+        resultsEl.classList.add('active');
+        document.getElementById('quiz-progress').style.display = 'none';
+        
+        const total = courseData[currentCourseId].quiz.length;
+        document.getElementById('final-score').innerText = currentScore;
+        const scoreSpan = document.getElementById('final-score');
+        
+        scoreSpan.style.color = (currentScore === total) ? "var(--brand-orange)" : "var(--brand-orange)";
+        
+        // Review
+        const container = document.getElementById('quiz-review-container');
+        container.innerHTML = '';
+        quizHistory.forEach((h, i) => {
+            const icon = h.correct ? '<i class="fa-solid fa-check"></i>' : '<i class="fa-solid fa-xmark"></i>';
+            const cls = h.correct ? '' : 'wrong';
+            const correctText = h.correct ? '' : `<div style="font-size:12px; color:#555; margin-top:4px;">Correct: ${h.correctAns}</div>`;
+            
+            container.innerHTML += `
+                <div class="review-item">
+                    <div class="review-q">${i+1}. ${h.q}</div>
+                    <div class="review-a ${cls}">${icon} Your Answer: ${h.userAns}</div>
+                    ${correctText}
+                </div>
+            `;
+        });
+
+        // Certificate
+        if(currentScore === total) {
+            if(typeof confetti === 'function') {
+                const rect = document.getElementById('quiz-section').getBoundingClientRect();
+                const x = (rect.left + rect.width/2) / window.innerWidth;
+                confetti({ particleCount: 150, spread: 70, origin: { x: x, y: 0.6 }, colors: ['#084A87', '#E67E22', '#2ECC71'] });
+            }
+            document.getElementById('cert-title').innerText = courseData[currentCourseId].title;
+            setTimeout(() => {
+                document.getElementById('certificate-modal').style.setProperty('display', 'flex', 'important');
+            }, 800);
+        }
+    }
+
+    // =========================================================
+    // 4. UTILITIES (ROBUST VERSION)
+    // =========================================================
+    
+    function filterCourses() {
+        const searchInput = document.getElementById('searchInput');
+        const diffFilter = document.getElementById('difficultyFilter');
+        
+        // Safety check: if elements don't exist, stop
+        if (!searchInput || !diffFilter) return;
+
+        const searchVal = searchInput.value.toLowerCase().trim();
+        const diffVal = diffFilter.value;
+        const cards = document.querySelectorAll('.course-card');
+
+        cards.forEach(card => {
+            // SAFE EXTRACTION: These lines prevent crashes if data is missing
+            const title = (card.getAttribute('data-title') || '').toLowerCase();
+            const tags = (card.getAttribute('data-tags') || '').toLowerCase();
+            const visibleText = card.innerText.toLowerCase(); 
+            const difficulty = card.getAttribute('data-difficulty') || 'Beginner'; // Default to Beginner if missing
+
+            // Logic
+            const matchesSearch = title.includes(searchVal) || tags.includes(searchVal) || visibleText.includes(searchVal);
+            const matchesDiff = (diffVal === 'All') || (difficulty === diffVal);
+
+            if (matchesSearch && matchesDiff) {
+                card.style.display = 'flex';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
+
+    function sortCourses() {
+        const sortSelect = document.getElementById('sortOrder');
+        const grid = document.getElementById('courseGrid');
+        if (!sortSelect || !grid) return;
+
+        const sortVal = sortSelect.value;
+        const cards = Array.from(grid.querySelectorAll('.course-card'));
+        const diffWeight = { 'Beginner': 1, 'Intermediate': 2, 'Advanced': 3 };
+
+        cards.sort((a, b) => {
+            // SAFE EXTRACTION: Handle missing/bad data gracefully
+            const durA = parseInt(a.getAttribute('data-duration')) || 0;
+            const durB = parseInt(b.getAttribute('data-duration')) || 0;
+            
+            const titleA = (a.getAttribute('data-title') || '').toLowerCase();
+            const titleB = (b.getAttribute('data-title') || '').toLowerCase();
+            
+            // Normalize difficulty to Title Case to match dictionary keys
+            let diffStrA = (a.getAttribute('data-difficulty') || 'Beginner');
+            diffStrA = diffStrA.charAt(0).toUpperCase() + diffStrA.slice(1).toLowerCase();
+            
+            let diffStrB = (b.getAttribute('data-difficulty') || 'Beginner');
+            diffStrB = diffStrB.charAt(0).toUpperCase() + diffStrB.slice(1).toLowerCase();
+
+            const valA = diffWeight[diffStrA] || 0;
+            const valB = diffWeight[diffStrB] || 0;
+
+            // Sort Logic
+            if (sortVal === 'duration-asc') return durA - durB;
+            if (sortVal === 'duration-desc') return durB - durA;
+            if (sortVal === 'az') return titleA.localeCompare(titleB);
+            if (sortVal === 'difficulty-asc') return valA - valB;
+            if (sortVal === 'difficulty-desc') return valB - valA;
+            return 0; // Default
+        });
+
+        // Re-append sorted cards to the grid
+        cards.forEach(card => grid.appendChild(card));
+    }
+
+    function clearFilters() {
+        const searchInput = document.getElementById('searchInput');
+        const diffFilter = document.getElementById('difficultyFilter');
+        const sortOrder = document.getElementById('sortOrder');
+
+        if(searchInput) searchInput.value = "";
+        if(diffFilter) diffFilter.value = "All";
+        if(sortOrder) sortOrder.value = "default";
+        
+        filterCourses();
+        sortCourses();
+    }
+
+    // Feedback
+    window.updateRatingDisplay = function(val) { document.getElementById('ratingValue').innerText = val + "/5"; };
+    
+    window.submitFeedback = function(e) {
+        e.preventDefault();
+        const rating = document.getElementById('ratingSlider').value;
+        const notes = document.getElementById('feedbackNotes').value;
+        const pageUrl = window.location.href + " (" + currentCourseId + ")"; 
+        const timestamp = new Date().toISOString();
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxeHVZiDONjwbGlzgXSdTWYCNvZ0CiOhkV-9SAh2Jl5wzVxfA4rlb5RwYjSU8TUibzp/exec"; 
+        
+        const data = { timestamp: timestamp, url: pageUrl, rating: rating, feedback: notes };
+        const submitBtn = e.target.querySelector('button');
+        const originalText = submitBtn.innerText;
+        submitBtn.innerText = "Sending...";
+        submitBtn.disabled = true;
+
+        if (GOOGLE_SCRIPT_URL) {
+            fetch(GOOGLE_SCRIPT_URL, {
+                method: 'POST',
+                mode: 'no-cors', 
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            })
+            .then(() => {
+                document.getElementById('feedbackForm').style.display = 'none';
+                document.getElementById('feedbackMessage').style.display = 'block';
+            })
+            .catch(err => {
+                console.error('Error:', err);
+                alert("Error sending feedback.");
+                submitBtn.innerText = originalText;
+                submitBtn.disabled = false;
+            });
+        }
+    };
+
+    // Shared UI
+    window.toggleAccessibility = function() {
+        document.body.classList.toggle('accessibility-mode');
+        const btns = document.querySelectorAll('.util-btn[onclick="toggleAccessibility()"]');
+        btns.forEach(btn => btn.classList.toggle('active'));
+    };
+
+    window.copyToClipboard = function() {
+        const dummy = document.createElement('input');
+        document.body.appendChild(dummy);
+        dummy.value = window.location.href;
+        dummy.select();
+        document.execCommand('copy');
+        document.body.removeChild(dummy);
+        const btns = document.querySelectorAll('.share-trigger');
+        btns.forEach(btn => {
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = 'Copied <i class="fa-solid fa-check"></i>';
+            setTimeout(() => { btn.innerHTML = originalHTML; }, 2000);
+        });
+    };
+
+    window.toggleAccordion = function(header) {
+        header.classList.toggle('active');
+        var content = header.nextElementSibling;
+        if (content.style.maxHeight) {
+            content.style.maxHeight = null;
+            content.classList.remove('open');
+        } else {
+            content.classList.add('open');
+            content.style.maxHeight = content.scrollHeight + "px";
+        }
+    };
+    
+    window.closeCert = function() {
+        document.getElementById('certificate-modal').style.setProperty('display', 'none', 'important');
+    }; 
 
 
 
