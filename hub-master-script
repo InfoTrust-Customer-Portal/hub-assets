@@ -88,7 +88,20 @@
         }
     };
 
-    // 7. Hash Copy Logic (REMOVED - DUPLICATE OF SECTION 2)
+    // 7. Hash Copy Logic
+    window.copyToClipboard = function() {
+      const dummy = document.createElement('input');
+      document.body.appendChild(dummy);
+      dummy.value = window.location.href; // Copies current hash
+      dummy.select();
+      document.execCommand('copy');
+      document.body.removeChild(dummy);
+      const btn = document.querySelector('.share-trigger');
+      btn.innerHTML = 'Copied <i class="fa-solid fa-check"></i>';
+      setTimeout(() => {
+        btn.innerHTML = 'Share <i class="fa-solid fa-share-from-square"></i>';
+      }, 2000);
+    };
 
     // 8. SPA Switcher & Hash Routing
     window.switchView = function(viewId) {
@@ -355,14 +368,14 @@
             }
         };
 
-// =================================================================
-// PLATINUM GLOBAL REFRESH (Polished Version)
-// 1. Structural Check for Dropdown Arrows (Menu works perfectly)
-// 2. Same-Page Anchor Check (TOC jumps smoothly without reloading)
-// 3. Forces Hard Refresh on everything else.
-// =================================================================
-
 (function() {
+    // =================================================================
+    // PLATINUM GLOBAL REFRESH (Polished Version)
+    // 1. Structural Check for Dropdown Arrows (Menu works perfectly)
+    // 2. Same-Page Anchor Check (TOC jumps smoothly without reloading)
+    // 3. Forces Hard Refresh on everything else.
+    // =================================================================
+
     document.body.addEventListener('click', function(e) {
         
         const target = e.target;
@@ -401,7 +414,7 @@
 
     }, true); 
 })();
-
-window.closeCert = function() {
-    document.getElementById('certificate-modal').style.setProperty('display', 'none', 'important');
-};
+        
+        window.closeCert = function() {
+            document.getElementById('certificate-modal').style.setProperty('display', 'none', 'important');
+        };
