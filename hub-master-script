@@ -212,7 +212,6 @@
 
     //Education Hub Lesson Page 
 
-     (function() {
         let currentScore = 0;
         let quizHistory = [];
         let currentQuestionIndex = 0;
