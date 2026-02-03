@@ -108,6 +108,19 @@ window.switchView = function(viewId) {
     window.scrollTo(0, 0);
 };
 
+// 8.1 Fix for Training SPA Scrolling
+window.openTraining = function(viewId) {
+    // Hide all views
+    document.querySelectorAll('.view-section').forEach(el => el.classList.add('it-hidden'));
+    
+    const target = document.getElementById(viewId);
+    if (target) {
+        target.classList.remove('it-hidden');
+        // Force scroll to top
+        target.scrollIntoView({ behavior: 'instant', block: 'start' });
+    }
+};
+
 // 9. PERSISTENT HASH POLLING (The Fix for Hydration Errors)
 var pollCount = 0;
 var hashCheck = setInterval(function() {
