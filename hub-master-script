@@ -88,183 +88,25 @@ window.submitFeedback = function(e) {
     }
 };
 
-// 8. SPA ROUTING & SCROLL FIXES (Newsletter + Education Hub)
-
-    // --- Helper: Universal Scroll-To-Top ---
-    function snapToTop(elementId) {
-        const el = document.getElementById(elementId);
-        if (el) {
-            // This forces the browser to snap the top of the element 
-            // to the top of the viewport instantly.
-            el.scrollIntoView({ behavior: 'instant', block: 'start' });
-        } else {
-            // Fallback for older browsers or missing IDs
-            window.scrollTo(0, 0);
-        }
+// 8. SPA Switcher & Hash Routing
+window.switchView = function(viewId) {
+    // Hide all views
+    document.querySelectorAll('.view-section').forEach(el => el.classList.add('it-hidden'));
+    document.getElementById(viewId).classList.remove('it-hidden');
+    // Handle Nav Visibility
+    if (viewId === 'view-archive') {
+    // SHOW Pills, HIDE Back Button
+    document.getElementById('archive-nav').classList.remove('it-hidden');
+    document.getElementById('article-nav').classList.add('it-hidden');
+    history.pushState("", document.title, window.location.pathname + window.location.search);
+    } else {
+    // HIDE Pills, SHOW Back Button
+    document.getElementById('archive-nav').classList.add('it-hidden');
+    document.getElementById('article-nav').classList.remove('it-hidden');
+    window.location.hash = viewId;
     }
-
-    // --- A. NEWSLETTER ARCHIVE LOGIC ---
-    window.switchView = function(viewId) {
-        // 1. Hide all views
-        document.querySelectorAll('.view-section').forEach(el => el.classList.add('it-hidden'));
-        
-        // 2. Show target and Snap to Top
-        const target = document.getElementById(viewId);
-        if (target) {
-            target.classList.remove('it-hidden');
-            snapToTop(viewId);
-        }
-
-        // 3. Handle Nav Visibility
-        if (viewId === 'view-archive') {
-            const archNav = document.getElementById('archive-nav');
-            const artNav = document.getElementById('article-nav');
-            if(archNav) archNav.classList.remove('it-hidden');
-            if(artNav) artNav.classList.add('it-hidden');
-            
-            // Update URL without hash for the main list
-            history.pushState("", document.title, window.location.pathname + window.location.search);
-        } else {
-            const archNav = document.getElementById('archive-nav');
-            const artNav = document.getElementById('article-nav');
-            if(archNav) archNav.classList.add('it-hidden');
-            if(artNav) artNav.classList.remove('it-hidden');
-            
-            // Set hash for deep linking
-            window.location.hash = viewId;
-        }
-    };
-
-    // --- B. EDUCATION HUB LOGIC (Overrides Local Script) ---
-    // We redefine 'loadLesson' here to force the scroll fix.
-    // This assumes 'courseData' is already defined on the page.
-    window.loadLesson = function(id) {
-        // Safety Check: Does courseData exist?
-        if (typeof courseData === 'undefined' || !courseData[id]) return;
-        
-        const data = courseData[id];
-        
-        // 1. Populate Content
-        const titleEl = document.getElementById('lesson-title');
-        if(titleEl) titleEl.innerText = data.title;
-        
-        const diffEl = document.getElementById('lesson-difficulty');
-        if(diffEl) diffEl.innerHTML = `<i class="fa-solid fa-signal"></i> ${data.difficulty}`;
-        
-        const durEl = document.getElementById('lesson-duration');
-        if(durEl) durEl.innerHTML = `<i class="fa-regular fa-clock"></i> ${data.duration} Min`;
-
-        const updateEl = document.getElementById('lesson-updated');
-        if(updateEl) updateEl.innerHTML = `<i class="fa-regular fa-calendar"></i> ${data.updated}`;
-
-        const videoEl = document.getElementById('lesson-video');
-        if(videoEl) videoEl.src = data.video;
-
-        const objEl = document.getElementById('lesson-objectives');
-        if(objEl) objEl.innerHTML = data.objectives.map(o => `<li>${o}</li>`).join('');
-
-        // 2. Render Accordions (Notes)
-        const notesContainer = document.getElementById('lesson-notes');
-        if (notesContainer) {
-            notesContainer.innerHTML = '';
-            data.notes.forEach((note) => {
-                notesContainer.innerHTML += `
-                    <div class="accordion-item">
-                        <div class="accordion-header" onclick="window.toggleAccordion(this)">
-                            ${note.title} <i class="fa-solid fa-chevron-down accordion-icon"></i>
-                        </div>
-                        <div class="accordion-content"><div class="accordion-body">${note.content}</div></div>
-                    </div>
-                `;
-            });
-        }
-
-        // 3. Render Tags & Extras
-        const tagEl = document.getElementById('lesson-tags');
-        if(tagEl) tagEl.innerHTML = data.tags.map(t => `<span class="tool-tag">${t}</span>`).join('');
-        
-        // (Simplified Related/Resource logic to prevent errors if elements missing)
-        const relatedList = document.getElementById('lesson-related');
-        const cardRelated = document.getElementById('card-related');
-        if (relatedList && cardRelated) {
-            if (data.related && data.related.length > 0) {
-                cardRelated.style.display = 'block';
-                relatedList.innerHTML = data.related.map(r => 
-                    `<li><a onclick="openTraining('${r.linkId}')" style="cursor:pointer"><i class="fa-solid ${r.icon}"></i> ${r.title}</a></li>`
-                ).join('');
-            } else {
-                cardRelated.style.display = 'none';
-            }
-        }
-        
-        const resourcesList = document.getElementById('lesson-resources');
-        const cardResources = document.getElementById('card-resources');
-        if (resourcesList && cardResources) {
-            if (data.resources && data.resources.length > 0) {
-                cardResources.style.display = 'block';
-                resourcesList.innerHTML = data.resources.map(r => 
-                    `<li><a href="${r.url}" target="_blank"><i class="fa-solid ${r.icon}"></i> ${r.title}</a></li>`
-                ).join('');
-            } else {
-                cardResources.style.display = 'none';
-            }
-        }
-
-        // 4. Reset Quiz
-        if (typeof resetQuizUI === 'function') resetQuizUI();
-        const fbForm = document.getElementById('feedbackForm');
-        if(fbForm) {
-            fbForm.reset();
-            fbForm.style.display = 'block';
-        }
-        const fbMsg = document.getElementById('feedbackMessage');
-        if(fbMsg) fbMsg.style.display = 'none';
-
-        // 5. SWITCH VIEW & SNAP TO TOP
-        const landing = document.getElementById('view-landing');
-        const lesson = document.getElementById('view-lesson-template');
-        const landingNav = document.getElementById('landing-nav');
-        const lessonNav = document.getElementById('lesson-nav');
-
-        if(landing) landing.classList.add('it-hidden');
-        if(lesson) {
-            lesson.classList.remove('it-hidden');
-            // THE FIX:
-            snapToTop('view-lesson-template');
-        }
-        
-        if(landingNav) landingNav.classList.add('it-hidden');
-        if(lessonNav) lessonNav.classList.remove('it-hidden');
-    };
-
-    // --- C. EDUCATION HUB ENTRY POINT (Overrides Local Script) ---
-    window.openTraining = function(viewId) {
-        if (viewId === 'view-landing') {
-            // Switch to Landing
-            history.pushState("", document.title, window.location.pathname + window.location.search);
-            
-            const landing = document.getElementById('view-landing');
-            const lesson = document.getElementById('view-lesson-template');
-            const landingNav = document.getElementById('landing-nav');
-            const lessonNav = document.getElementById('lesson-nav');
-
-            if(lesson) lesson.classList.add('it-hidden');
-            if(landing) {
-                landing.classList.remove('it-hidden');
-                snapToTop('view-landing'); // Snap landing to top too!
-            }
-            if(landingNav) landingNav.classList.remove('it-hidden');
-            if(lessonNav) lessonNav.classList.add('it-hidden');
-
-        } else {
-            // Switch to Lesson
-            // We use the global 'courseData' variable defined in your local HTML
-            if (typeof courseData !== 'undefined' && courseData[viewId]) {
-                window.location.hash = viewId;
-                window.loadLesson(viewId);
-            }
-        }
-    };
+    window.scrollTo(0, 0);
+};
 
 // 9. PERSISTENT HASH POLLING (The Fix for Hydration Errors)
 var pollCount = 0;
